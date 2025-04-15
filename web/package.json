@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.1",
     "@mui/material": "^7.0.1",
+    "@mui/system": "^7.0.2",
     "@prisma/client": "^6.5.0",
     "axios": "^1.8.4",
     "crypto-js": "^4.2.0",
