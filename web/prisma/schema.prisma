@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(uuid())
+  name        String
+  email       String      @unique
+  password    String
+  inventories Inventory[]
+  sessions    Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Invite {
+  id    String @id @default(uuid())
+  email String @unique
+}
+
+model Event {
+  id          String      @id @default(uuid())
+  name        String
+  date        DateTime
+  inventories Inventory[]
+}
+
+model Item {
+  id             String       @id @default(uuid())
+  category       ItemCategory
+  brandId        String
+  brand          Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name           String
+  sizeInMl       Int
+  image          String
+  amountInStock  Int
+  amountPerCrate Int
+  countings      Counting[]
+}
+
+model Counting {
+  id          String    @id @default(uuid())
+  amount      Int
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, inventoryId])
+}
+
+model Inventory {
+  id        String     @id @default(uuid())
+  createdAt DateTime   @default(now())
+  creatorId String
+  creator   User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  countings Counting[]
+  eventId   String
+  lastEvent Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  done      Boolean    @default(false)
+}
+
+model Brand {
+  id    String @id @default(uuid())
+  name  String @unique
+  items Item[]
+}
+
+enum ItemCategory {
+  WATER
+  SOFTDRINK
+  BEER
+  WINE
+  LIQUOR
+}
