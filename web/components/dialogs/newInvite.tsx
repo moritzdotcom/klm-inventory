@@ -85,8 +85,12 @@ export default function NewInviteDialog({
             <ErrorMessage message={emailError} />
           </div>
           <ErrorMessage message={submitError} />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            Einladen
+          <button
+            className="btn-primary disabled:opacity-80"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Lädt...' : 'Einladen'}
           </button>
         </form>
       </div>

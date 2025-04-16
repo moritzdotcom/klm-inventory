@@ -210,8 +210,12 @@ export default function EditItemDialog({
             <ErrorMessage message={amountPerCrateError} />
           </div>
           <ErrorMessage message={submitError} />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            Speichern
+          <button
+            className="btn-primary disabled:opacity-80"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Lädt...' : 'Speichern'}
           </button>
         </form>
       </div>

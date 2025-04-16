@@ -79,7 +79,7 @@ export default function WarehousePage() {
 
   return (
     <div className="w-full max-w-2xl mx-auto mb-4">
-      <header className="w-full sticky top-0 pt-4 pb-2 px-3 backdrop-blur">
+      <header className="w-full sticky top-0 pt-4 pb-2 px-3 backdrop-blur z-50">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center text-sm text-sky-600">
             <ArrowBackIosIcon fontSize="inherit" />
@@ -96,7 +96,7 @@ export default function WarehousePage() {
         >
           <ExcelIcon /> <span>Bestandsliste herunterladen</span>
         </button>
-        <TableContainer sx={{ maxHeight: '80vh' }}>
+        <TableContainer sx={{ maxHeight: '55vh' }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>

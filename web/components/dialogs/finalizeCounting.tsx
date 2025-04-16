@@ -81,10 +81,18 @@ export default function FinalizeCountingDialog({
             ))}
           </div>
         )}
-        <button disabled={loading} onClick={onSubmit} className="btn-primary">
+        <button
+          disabled={loading}
+          onClick={onSubmit}
+          className="btn-primary disabled:opacity-80"
+        >
           Inventur Abschließen
         </button>
-        <button disabled={loading} onClick={onClose} className="btn-secondary">
+        <button
+          disabled={loading}
+          onClick={onClose}
+          className="btn-secondary disabled:opacity-80"
+        >
           Inventur Fortsetzen
         </button>
       </div>

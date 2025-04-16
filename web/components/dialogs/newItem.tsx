@@ -221,8 +221,12 @@ export default function NewItemDialog({
             <ErrorMessage message={amountPerCrateError} />
           </div>
           <ErrorMessage message={submitError} />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            Erstellen
+          <button
+            className="btn-primary disabled:opacity-80"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Lädt...' : 'Erstellen'}
           </button>
         </form>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ErrorMessage from '@/components/utils/errorMessage';
 import { Close } from '@mui/icons-material';
 import { ApiPostEventsResponse } from '@/pages/api/events';
+import { TextField } from '@mui/material';
 
 interface NewEventDialogProps extends BaseDialogProps {
   onSuccess?: (event: ApiPostEventsResponse) => void;
@@ -80,11 +81,12 @@ export default function NewEventDialog({
             <Close fontSize="inherit" className="text-gray-500" />
           </button>
         </div>
-        <form onSubmit={onSubmit} className="w-full flex flex-col gap-3">
+        <form onSubmit={onSubmit} className="w-full flex flex-col gap-6">
           <div>
-            <input
-              className="textfield p-3"
-              placeholder="Name"
+            <TextField
+              label="Name"
+              variant="outlined"
+              fullWidth
               type="text"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
@@ -92,9 +94,11 @@ export default function NewEventDialog({
             <ErrorMessage message={nameError} />
           </div>
           <div>
-            <input
-              className="textfield p-3"
-              placeholder="Datum"
+            <TextField
+              slotProps={{ inputLabel: { shrink: true } }}
+              label="Datum"
+              variant="outlined"
+              fullWidth
               type="date"
               value={date}
               onChange={(e) => setDate(e.currentTarget.value)}
@@ -102,8 +106,12 @@ export default function NewEventDialog({
             <ErrorMessage message={dateError} />
           </div>
           <ErrorMessage message={submitError} />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            Erstellen
+          <button
+            className="btn-primary disabled:opacity-80"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Lädt...' : 'Erstellen'}
           </button>
         </form>
       </div>

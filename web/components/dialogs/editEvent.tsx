@@ -5,6 +5,7 @@ import ErrorMessage from '@/components/utils/errorMessage';
 import { Close } from '@mui/icons-material';
 import { ApiPutEventResponse } from '@/pages/api/events/[eventId]';
 import { Event } from '@prisma/client';
+import { TextField } from '@mui/material';
 
 interface EditEventDialogProps extends BaseDialogProps {
   event: Event;
@@ -80,9 +81,10 @@ export default function EditEventDialog({
         </div>
         <form onSubmit={onSubmit} className="w-full flex flex-col gap-3">
           <div>
-            <input
-              className="textfield p-3"
-              placeholder="Name"
+            <TextField
+              label="Name"
+              variant="outlined"
+              fullWidth
               type="text"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
@@ -90,9 +92,11 @@ export default function EditEventDialog({
             <ErrorMessage message={nameError} />
           </div>
           <div>
-            <input
-              className="textfield p-3"
-              placeholder="Datum"
+            <TextField
+              slotProps={{ inputLabel: { shrink: true } }}
+              label="Datum"
+              variant="outlined"
+              fullWidth
               type="date"
               value={date}
               onChange={(e) => setDate(e.currentTarget.value)}
@@ -100,8 +104,12 @@ export default function EditEventDialog({
             <ErrorMessage message={dateError} />
           </div>
           <ErrorMessage message={submitError} />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            Erstellen
+          <button
+            className="btn-primary disabled:opacity-80"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Lädt...' : 'Erstellen'}
           </button>
         </form>
       </div>

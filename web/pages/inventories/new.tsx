@@ -1,16 +1,17 @@
 import {
-  Divider,
   FormControl,
   InputLabel,
   MenuItem,
   Select,
+  TextField,
 } from '@mui/material';
 import axios, { isAxiosError } from 'axios';
 import { useEffect, useState } from 'react';
-import { ApiGetEventsResponse } from '../api/events';
+import { ApiGetEventsResponse, ApiPostEventsResponse } from '../api/events';
 import Link from 'next/link';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { useRouter } from 'next/router';
+import ErrorMessage from '@/components/utils/errorMessage';
 
 export default function NewInventoryPage() {
   const [loading, setLoading] = useState(false);
@@ -18,15 +19,61 @@ export default function NewInventoryPage() {
   const [events, setEvents] = useState<ApiGetEventsResponse>([]);
   const router = useRouter();
 
+  const [eventName, setEventName] = useState('');
+  const [eventNameError, setEventNameError] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventDateError, setEventDateError] = useState('');
+  const [eventFormDirty, setEventFormDirty] = useState(false);
+  const [eventSubmitError, setEventSubmitError] = useState('');
+
+  const createEvent = async () => {
+    if (events.length > 0) return true;
+
+    setEventSubmitError('');
+    setEventFormDirty(true);
+    if (!validateEventInputs()) return false;
+    try {
+      const { data: event }: { data: ApiPostEventsResponse } = await axios({
+        url: `/api/events`,
+        method: 'POST',
+        data: {
+          name: eventName,
+          date: eventDate,
+        },
+      });
+      setEventName('');
+      setEventNameError('');
+      setEventDate('');
+      setEventDateError('');
+      setEventFormDirty(false);
+      return event;
+    } catch (e) {
+      if (isAxiosError(e)) {
+        setEventSubmitError(e.response?.data);
+      }
+    }
+    return false;
+  };
+
+  const validateEventInputs = () => {
+    setEventNameError('');
+    setEventDateError('');
+    if (!eventName) setEventNameError('Name darf nicht leer sein');
+    if (!eventDate) setEventDateError('Datum darf nicht leer sein');
+    return Boolean(eventName && eventDate);
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    const event = await createEvent();
+    if (!event) return;
     try {
       const { data: inventory } = await axios({
         url: `/api/inventories`,
         method: 'POST',
         data: {
-          eventId,
+          eventId: typeof event == 'boolean' ? eventId : event.id,
         },
       });
       router.push(`/inventories/${inventory.id}/count`);
@@ -38,6 +85,11 @@ export default function NewInventoryPage() {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!eventFormDirty) return;
+    validateEventInputs();
+  }, [eventName, eventDate]);
 
   useEffect(() => {
     axios('/api/events').then(({ data }: { data: ApiGetEventsResponse }) => {
@@ -61,24 +113,65 @@ export default function NewInventoryPage() {
         </h3>
         <p className="invisible">Zurück</p>
       </div>
-      <p className="mb-5 text-gray-700">Wähle die letzte Veranstaltung aus</p>
-      <form onSubmit={onSubmit} className="w-full flex flex-col gap-5">
-        <FormControl fullWidth>
-          <InputLabel>Veranstaltung</InputLabel>
-          <Select
-            value={eventId}
-            label="Veranstaltung"
-            onChange={(e) => setEventId(e.target.value)}
-          >
-            {events.map((e) => (
-              <MenuItem value={e.id} key={e.id}>
-                {e.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <button className="btn-primary" type="submit" disabled={loading}>
-          Inventur beginnen
+      <form
+        onSubmit={onSubmit}
+        className="w-full flex flex-col gap-5 mt-[25vh]"
+      >
+        {events.length > 0 ? (
+          <>
+            <p className="text-gray-700">Wähle die letzte Veranstaltung aus</p>
+            <FormControl fullWidth>
+              <InputLabel>Veranstaltung</InputLabel>
+              <Select
+                value={eventId}
+                label="Veranstaltung"
+                onChange={(e) => setEventId(e.target.value)}
+              >
+                {events.map((e) => (
+                  <MenuItem value={e.id} key={e.id}>
+                    {e.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-700">
+              Erstelle zunächst eine Veranstaltung
+            </p>
+            <div>
+              <TextField
+                label="Name"
+                variant="outlined"
+                fullWidth
+                type="text"
+                value={eventName}
+                onChange={(e) => setEventName(e.currentTarget.value)}
+              />
+              <ErrorMessage message={eventNameError} />
+            </div>
+            <div>
+              <TextField
+                slotProps={{ inputLabel: { shrink: true } }}
+                label="Datum"
+                variant="outlined"
+                fullWidth
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.currentTarget.value)}
+              />
+              <ErrorMessage message={eventDateError} />
+            </div>
+          </>
+        )}
+        <ErrorMessage message={eventSubmitError} />
+        <button
+          className="btn-primary disabled:opacity-80"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'Lädt...' : 'Inventur beginnen'}
         </button>
       </form>
     </div>

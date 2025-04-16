@@ -31,7 +31,7 @@ export default function EventShowPage({ eventId }: { eventId: string }) {
             <ArrowBackIosIcon fontSize="inherit" />
             <p>Zurück</p>
           </Link>
-          <h3 className="w-full text-3xl text-center text-sky-700">
+          <h3 className="w-full text-xl text-center text-sky-700">
             {event?.name}
           </h3>
           <p className="invisible">Zurück</p>

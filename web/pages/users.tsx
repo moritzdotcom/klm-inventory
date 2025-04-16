@@ -246,7 +246,7 @@ export default function UsersPage({ session }: { session: Session }) {
         </div>
       </div>
       <NewInviteDialog
-        maxWidth="sm"
+        fullWidth
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onSuccess={handleInviteSuccess}
@@ -292,7 +292,7 @@ function InviteCard({
       <button
         onClick={handleDelete}
         disabled={loading}
-        className="text-red-700"
+        className="text-red-700 disabled:opacity-80"
       >
         <DeleteForeverIcon />
       </button>

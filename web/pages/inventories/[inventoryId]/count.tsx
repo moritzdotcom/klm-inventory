@@ -205,9 +205,9 @@ export default function InventoryCountPage({
           <button
             onClick={saveCounting}
             disabled={loading}
-            className="btn-primary text-lg w-full"
+            className="btn-primary text-lg w-full disabled:opacity-80"
           >
-            SPEICHERN
+            {loading ? 'SPEICHERT...' : 'SPEICHERN'}
           </button>
           <div className="w-full flex justify-between">
             <button
