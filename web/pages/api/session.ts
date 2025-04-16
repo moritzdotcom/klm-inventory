@@ -37,8 +37,8 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       },
     });
     res.setHeader('Set-Cookie', [
-      `sessionId=${session.id}; path=/; HttpOnly`,
-      `userId=${user.id}; path=/; HttpOnly`,
+      `sessionId=${session.id}; path=/; HttpOnly; Max-Age=31536000`,
+      `userId=${user.id}; path=/; HttpOnly; Max-Age=31536000`,
     ]);
     return res.json({ id: user.id, name: user.name, email: user.email });
   }
