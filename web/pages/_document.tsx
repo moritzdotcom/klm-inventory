@@ -10,7 +10,10 @@ export default function Document() {
         <link rel="icon" href="/favicon.ico" />
 
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:url" content="https://klm-app.de" />
+        <meta
+          name="twitter:url"
+          content="https://inventur.km-entertainment.de"
+        />
         <meta name="twitter:title" content="KLM App" />
         <meta name="twitter:description" content="Lagerbestandstool" />
 
@@ -18,7 +21,10 @@ export default function Document() {
         <meta property="og:title" content="KLM App" />
         <meta property="og:description" content="Lagerbestandstool" />
         <meta property="og:site_name" content="KLM App" />
-        <meta property="og:url" content="https://klm-app.de" />
+        <meta
+          property="og:url"
+          content="https://inventur.km-entertainment.de"
+        />
       </Head>
       <body className="antialiased">
         <Main />

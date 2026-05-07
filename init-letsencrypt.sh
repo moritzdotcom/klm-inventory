@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(klm-app.de www.klm-app.de)
+domains=(inventur.km-entertainment.de)
 rsa_key_size=4096
 data_path="./certbot"
 email="ml@km-entertainment.de" # Adding a valid address is strongly recommended
