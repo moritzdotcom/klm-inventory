@@ -35,6 +35,7 @@ export default function EditItemDialog({
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(item.name);
+  const [price, setPrice] = useState(String(item.priceCents / 100));
   const [nameError, setNameError] = useState('');
   const [category, setCategory] = useState<string>(item.category);
   const [categoryError, setCategoryError] = useState('');
@@ -44,10 +45,10 @@ export default function EditItemDialog({
   const [sizeInMlError, setSizeInMlError] = useState('');
   const [image, setImage] = useState(item.image);
   const [amountInStock, setAmountInStock] = useState<number | string>(
-    item.amountInStock
+    item.amountInStock,
   );
   const [amountPerCrate, setAmountPerCrate] = useState<number | string>(
-    item.amountPerCrate
+    item.amountPerCrate,
   );
   const [amountPerCrateError, setAmountPerCrateError] = useState('');
   const [formDirty, setFormDirty] = useState(false);
@@ -61,6 +62,7 @@ export default function EditItemDialog({
     if (!validateInputs()) return;
     setLoading(true);
     try {
+      const priceCents = Math.round(Number(price.replace(',', '.')) * 100);
       const { data } = await axios({
         url: `/api/items/${item.id}`,
         method: 'PUT',
@@ -70,6 +72,7 @@ export default function EditItemDialog({
           brandName,
           sizeInMl,
           image,
+          priceCents,
           amountInStock,
           amountPerCrate,
         },
@@ -103,10 +106,10 @@ export default function EditItemDialog({
     setAmountPerCrateError(amountPerCrateErrorValue);
     return !Boolean(
       nameErrorValue ||
-        categoryErrorValue ||
-        brandNameErrorValue ||
-        sizeInMlErrorValue ||
-        amountPerCrateErrorValue
+      categoryErrorValue ||
+      brandNameErrorValue ||
+      sizeInMlErrorValue ||
+      amountPerCrateErrorValue,
     );
   };
 
@@ -187,6 +190,19 @@ export default function EditItemDialog({
               onChange={(e) => setName(e.currentTarget.value)}
             />
             <ErrorMessage message={nameError} />
+          </div>
+          <div>
+            <TextField
+              fullWidth
+              label="Verkaufspreis pro Flasche in €"
+              type="number"
+              inputProps={{
+                min: 0,
+                step: '0.01',
+              }}
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+            />
           </div>
           <div>
             <TextField

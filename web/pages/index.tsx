@@ -6,6 +6,7 @@ import CelebrationRoundedIcon from '@mui/icons-material/CelebrationRounded';
 import LiquorRoundedIcon from '@mui/icons-material/LiquorRounded';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import HistoryIcon from '@mui/icons-material/History';
+import IsoIcon from '@mui/icons-material/Iso';
 import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
@@ -46,6 +47,7 @@ export default function Home({ session }: { session: Session }) {
       <LinkItem href="/items" text="Artikel" Icon={LiquorRoundedIcon} />
       <LinkItem href="/warehouse" text="Lager" Icon={WarehouseIcon} />
       <LinkItem href="/inventories" text="Inventuren" Icon={HistoryIcon} />
+      <LinkItem href="/events/waiter" text="Event-Tracker" Icon={IsoIcon} />
       <LinkItem href="/inventories/new" text="Neue Inventur" Icon={AddIcon} />
       <LinkItem href="/users" text="Benutzerverwaltung" Icon={PersonIcon} />
       <OpenInventoriesLink inventories={openInventories} />

@@ -1,6 +1,6 @@
 import { GetServerSidePropsContext } from 'next';
 import { useEffect, useState } from 'react';
-import { ApiGetEventResponse } from '../api/events/[eventId]';
+import { ApiGetEventResponse } from '../../api/events/[eventId]';
 import axios from 'axios';
 import Link from 'next/link';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -95,7 +95,7 @@ function InventoryComparison({
     const previousCountings = previousEvent.inventories[0].countings;
 
     const previousMap = new Map(
-      previousCountings.map(({ item, amount }) => [item.id, amount])
+      previousCountings.map(({ item, amount }) => [item.id, amount]),
     );
 
     const commonCountings = countings

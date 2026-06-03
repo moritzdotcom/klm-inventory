@@ -3,7 +3,7 @@ import axios, { isAxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import ErrorMessage from '@/components/utils/errorMessage';
 import { Close } from '@mui/icons-material';
-import { ApiPutEventResponse } from '@/pages/api/events/[eventId]';
+import { ApiPutEventResponse } from '@/pages/api/events/[eventId]/index';
 import { Event } from '@prisma/client';
 import { TextField } from '@mui/material';
 

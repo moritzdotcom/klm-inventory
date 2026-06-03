@@ -6,7 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const session = await getServerSession(req);
   if (!session) return res.status(401).json('Not authenticated');
@@ -17,7 +17,7 @@ export default async function handle(
     await handlePOST(req, res);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -44,6 +44,7 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
     brandName,
     sizeInMl,
     image,
+    priceCents,
     amountInStock,
     amountPerCrate,
   } = req.body;
@@ -57,6 +58,7 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       brandId: brand.id,
       sizeInMl,
       image,
+      priceCents,
       amountInStock: Number(amountInStock),
       amountPerCrate: Number(amountPerCrate),
     },

@@ -39,6 +39,7 @@ export default function NewItemDialog({
   const [brandNameError, setBrandNameError] = useState('');
   const [sizeInMl, setSizeInMl] = useState('');
   const [sizeInMlError, setSizeInMlError] = useState('');
+  const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
   const [amountInStock, setAmountInStock] = useState('');
   const [amountPerCrate, setAmountPerCrate] = useState('');
@@ -54,6 +55,7 @@ export default function NewItemDialog({
     if (!validateInputs()) return;
     setLoading(true);
     try {
+      const priceCents = Math.round(Number(price.replace(',', '.')) * 100);
       const { data: item } = await axios({
         url: `/api/items`,
         method: 'POST',
@@ -63,6 +65,7 @@ export default function NewItemDialog({
           brandName,
           sizeInMl,
           image,
+          priceCents,
           amountInStock,
           amountPerCrate,
         },
@@ -81,6 +84,7 @@ export default function NewItemDialog({
   const resetForm = () => {
     setName('');
     setNameError('');
+    setPrice('');
     setCategory('');
     setCategoryError('');
     setBrandName('');
@@ -114,10 +118,10 @@ export default function NewItemDialog({
     setAmountPerCrateError(amountPerCrateErrorValue);
     return !Boolean(
       nameErrorValue ||
-        categoryErrorValue ||
-        brandNameErrorValue ||
-        sizeInMlErrorValue ||
-        amountPerCrateErrorValue
+      categoryErrorValue ||
+      brandNameErrorValue ||
+      sizeInMlErrorValue ||
+      amountPerCrateErrorValue,
     );
   };
 
@@ -198,6 +202,19 @@ export default function NewItemDialog({
               onChange={(e) => setName(e.currentTarget.value)}
             />
             <ErrorMessage message={nameError} />
+          </div>
+          <div>
+            <TextField
+              fullWidth
+              label="Verkaufspreis pro Flasche in €"
+              type="number"
+              inputProps={{
+                min: 0,
+                step: '0.01',
+              }}
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+            />
           </div>
           <div>
             <TextField

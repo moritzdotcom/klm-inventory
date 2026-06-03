@@ -6,7 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const session = await getServerSession(req);
   if (!session) return res.status(401).json('Not authenticated');
@@ -22,7 +22,7 @@ export default async function handle(
     await handleDELETE(req, res, itemId);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -37,7 +37,7 @@ export type ApiGetItemResponse = Prisma.ItemGetPayload<{
 async function handleGET(
   req: NextApiRequest,
   res: NextApiResponse,
-  id: string
+  id: string,
 ) {
   const item = await prisma.item.findUnique({
     where: { id },
@@ -58,7 +58,7 @@ export type ApiPutItemResponse = Prisma.ItemGetPayload<{
 async function handlePUT(
   req: NextApiRequest,
   res: NextApiResponse,
-  id: string
+  id: string,
 ) {
   const {
     name,
@@ -66,6 +66,7 @@ async function handlePUT(
     brandName,
     sizeInMl,
     image,
+    priceCents,
     amountInStock,
     amountPerCrate,
   } = req.body;
@@ -81,6 +82,7 @@ async function handlePUT(
       brandId: brand ? brand.id : undefined,
       sizeInMl: sizeInMl ? sizeInMl : undefined,
       image: image ? image : undefined,
+      priceCents: priceCents ? priceCents : undefined,
       amountInStock: amountInStock ? Number(amountInStock) : undefined,
       amountPerCrate: amountPerCrate ? Number(amountPerCrate) : undefined,
     },
@@ -93,7 +95,7 @@ async function handlePUT(
 async function handleDELETE(
   req: NextApiRequest,
   res: NextApiResponse,
-  id: string
+  id: string,
 ) {
   const item = await prisma.item.delete({
     where: { id },
