@@ -3,6 +3,7 @@ import { ItemCategory } from '@prisma/client';
 import prisma from '@/lib/prismadb';
 import { getServerSession } from '@/lib/models/session';
 import { findOrCreateBrandByName } from '@/lib/models/brand';
+import { publishWaiterChange } from '@/lib/realtime/publishWaiterChange';
 
 class ApiError extends Error {
   constructor(
@@ -110,6 +111,8 @@ export default async function handler(
 
       return item;
     });
+
+    await publishWaiterChange(eventId);
 
     return res.status(201).json({
       item: {

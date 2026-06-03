@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prismadb';
 import { withSerializableRetry } from '@/lib/prisma/withSerializableRetry';
 import { getServerSession } from '@/lib/models/session';
+import { publishWaiterChange } from '@/lib/realtime/publishWaiterChange';
 
 class ApiError extends Error {
   constructor(
@@ -251,6 +252,8 @@ export default async function handler(
           });
         });
 
+        await publishWaiterChange(eventId);
+
         return res.status(200).json(await getWaiterView(eventId));
       }
 
@@ -296,6 +299,7 @@ export default async function handler(
           },
         });
 
+        await publishWaiterChange(eventId);
         return res.status(200).json(await getWaiterView(eventId));
       }
 

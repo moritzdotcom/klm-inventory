@@ -39,6 +39,7 @@ import {
 } from '@/lib/models/item';
 import type { ApiGetWaiterTrackingResponse } from '@/pages/api/events/[eventId]/waiter';
 import AutocompleteInput from '@/components/utils/autocompleteInput';
+import { getRealtimeSocket } from '@/lib/realtime/socket';
 
 type PageMode = 'TRACK' | 'EDIT';
 type WaiterItem = ApiGetWaiterTrackingResponse['items'][number];
@@ -129,29 +130,41 @@ export default function WaiterTrackingPage() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editedItem, setEditedItem] = useState<WaiterItem | null>(null);
 
-  const loadData = useCallback(async () => {
-    if (!eventId) return;
+  const loadData = useCallback(
+    async ({
+      showLoadingState = true,
+    }: {
+      showLoadingState?: boolean;
+    } = {}) => {
+      if (!eventId) return;
 
-    setLoading(true);
-    setError(null);
+      if (showLoadingState) {
+        setLoading(true);
+      }
 
-    try {
-      const response = await axios.get<ApiGetWaiterTrackingResponse>(
-        `/api/events/${eventId}/waiter`,
-      );
+      setError(null);
 
-      setData(response.data);
-      setWaiterName(response.data.settlement.waiterName ?? '');
+      try {
+        const response = await axios.get<ApiGetWaiterTrackingResponse>(
+          `/api/events/${eventId}/waiter`,
+        );
 
-      setMinimumSpend(
-        formatEuroInput(response.data.settlement.prepaidMinimumSpendCents),
-      );
-    } catch {
-      setError('Die Abrechnung konnte nicht geladen werden.');
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
+        setData(response.data);
+        setWaiterName(response.data.settlement.waiterName ?? '');
+
+        setMinimumSpend(
+          formatEuroInput(response.data.settlement.prepaidMinimumSpendCents),
+        );
+      } catch {
+        setError('Die Abrechnung konnte nicht aktualisiert werden.');
+      } finally {
+        if (showLoadingState) {
+          setLoading(false);
+        }
+      }
+    },
+    [eventId],
+  );
 
   useEffect(() => {
     loadData();
@@ -513,6 +526,53 @@ export default function WaiterTrackingPage() {
 
     return Array.from(groups.entries());
   }, [visibleItems]);
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    const socket = getRealtimeSocket();
+
+    if (!socket) return;
+
+    const joinRoom = () => {
+      socket.emit('waiter:join', {
+        eventId,
+      });
+    };
+
+    const handleRemoteChange = (payload: {
+      eventId: string;
+      changedAt: string;
+    }) => {
+      if (payload.eventId !== eventId) return;
+
+      /**
+       * Der eigene Klick wurde bereits optimistisch angezeigt.
+       * Das erneute Laden gleicht den lokalen Stand mit dem
+       * tatsächlichen Datenbankstand ab und zeigt gleichzeitig
+       * Änderungen anderer Geräte an.
+       */
+      loadData({
+        showLoadingState: false,
+      });
+    };
+
+    socket.on('connect', joinRoom);
+    socket.on('waiter:changed', handleRemoteChange);
+
+    if (socket.connected) {
+      joinRoom();
+    }
+
+    return () => {
+      socket.emit('waiter:leave', {
+        eventId,
+      });
+
+      socket.off('connect', joinRoom);
+      socket.off('waiter:changed', handleRemoteChange);
+    };
+  }, [eventId, loadData]);
 
   if (loading || !data) {
     return (

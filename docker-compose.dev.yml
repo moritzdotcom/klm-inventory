@@ -5,30 +5,42 @@ services:
       context: ./web
     command: bash -c "npm install --unsafe-perm && npm run dev"
     volumes:
-      - './web:/web'
+      - "./web:/web"
     ports:
-      - 3004:3000
-      - 5556:5555
+      - "3004:3000"
+      - "5556:5555"
     stdin_open: true
     env_file:
       - ./.env
     depends_on:
       - db
-  # nginx:
-  #   image: nginx
-  #   restart: always
-  #   volumes:
-  #     - ./nginx/dev.d:/etc/nginx/conf.d
-  #   ports:
-  #     - '80:80'
-  #   depends_on:
-  #     - web
+      - realtime
+  realtime:
+    build:
+      context: ./realtime
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    expose:
+      - "3005"
+    ports:
+      - "3005:3005"
+  nginx:
+    image: nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/dev.d:/etc/nginx/conf.d
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+      - realtime
   db:
     image: postgres:14.1-alpine
     restart: always
     env_file:
       - ./.env
     ports:
-      - '5435:5432'
-    volumes: 
+      - "5435:5432"
+    volumes:
       - ./db:/var/lib/postgresql/data

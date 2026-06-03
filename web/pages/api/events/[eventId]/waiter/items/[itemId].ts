@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ItemCategory } from '@prisma/client';
 import prisma from '@/lib/prismadb';
 import { getServerSession } from '@/lib/models/session';
+import { publishWaiterChange } from '@/lib/realtime/publishWaiterChange';
 
 class ApiError extends Error {
   constructor(
@@ -98,6 +99,7 @@ export default async function handler(
         });
       });
 
+      await publishWaiterChange(eventId);
       return res.status(200).json({ success: true });
     }
 
@@ -145,6 +147,7 @@ export default async function handler(
           },
         });
       });
+      await publishWaiterChange(eventId);
 
       return res.status(200).json({
         success: true,
