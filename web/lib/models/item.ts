@@ -1,9 +1,9 @@
 import { ItemCategory } from '@prisma/client';
 
-export const CATEGORIES = ['WATER', 'SOFTDRINK', 'BEER', 'WINE', 'LIQUOR'];
+export const CATEGORIES = Object.keys(ItemCategory);
 
 export const SIZESINML = [
-  200, 250, 333, 500, 700, 750, 1000, 1500, 1750, 3000, 6000,
+  200, 250, 333, 500, 700, 750, 1000, 1500, 1750, 3000, 6000, 10000,
 ];
 
 export function isValidCategory(c: string): c is ItemCategory {
@@ -17,10 +17,12 @@ export function translateCategory(c: string) {
     BEER: 'Bier',
     WINE: 'Wein',
     LIQUOR: 'Spirituosen',
+    SPECIALS: 'Specials',
   }[c];
 }
 
-export function translateSize(s: Number) {
+export function translateSize(s: Number | null) {
+  if (!s) return '-';
   return {
     '200': '0,2 l',
     '250': '0,25 l',
@@ -33,13 +35,14 @@ export function translateSize(s: Number) {
     '1750': '1,75 l',
     '3000': '3 l',
     '6000': '6 l',
+    '10000': '10 l',
   }[`${s}`];
 }
 
 type ItemCompareFnItem = {
   category: ItemCategory;
   name: string;
-  sizeInMl: number;
+  sizeInMl: number | null;
   brand: { name: string };
 };
 
@@ -50,5 +53,5 @@ export function itemCompareFn(a: ItemCompareFnItem, b: ItemCompareFnItem) {
   if (brandComparison !== 0) return brandComparison;
   const nameComparison = a.name.localeCompare(b.name);
   if (nameComparison !== 0) return nameComparison;
-  return a.sizeInMl - b.sizeInMl;
+  return Number(a.sizeInMl) - Number(b.sizeInMl);
 }

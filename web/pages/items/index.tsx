@@ -11,8 +11,9 @@ import {
   translateCategory,
   translateSize,
 } from '@/lib/models/item';
-import ItemImage from '@/components/utils/itemImage';
+import ItemImage from '@/components/items/image';
 import { ItemCategory } from '@prisma/client';
+import { RestaurantMenuRounded } from '@mui/icons-material';
 
 export default function ItemsPage() {
   const [newDialogOpen, setNewDialogOpen] = useState(false);
@@ -47,13 +48,23 @@ export default function ItemsPage() {
           <h3 className="w-full text-3xl text-center text-sky-700">Artikel</h3>
           <p className="invisible">Zurück</p>
         </div>
-        <button
-          onClick={() => setNewDialogOpen(true)}
-          className="btn-primary mt-5 w-full flex items-center justify-center gap-1"
-        >
-          <AddIcon />
-          <p>Neuen Artikel anlegen</p>
-        </button>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setNewDialogOpen(true)}
+            className="btn-primary flex min-h-12 items-center justify-center gap-1 px-2"
+          >
+            <AddIcon />
+            <span>Neuer Artikel</span>
+          </button>
+
+          <Link
+            href="/items/newRecipe"
+            className="flex min-h-12 items-center justify-center gap-1 rounded-md bg-white px-2 text-sm font-semibold text-sky-700 shadow-sm"
+          >
+            <RestaurantMenuRounded />
+            <span>Neues Rezept</span>
+          </Link>
+        </div>
       </header>
       <div className="px-3">
         <div className="pt-5 flex flex-col gap-5">
@@ -165,7 +176,8 @@ function renderItems(loading: boolean, items: ApiGetItemsResponse) {
             <h6 className="text-base text-gray-600">{item.brand.name}</h6>
 
             <h5 className="truncate text-lg sm:text-xl">
-              {item.name} ({translateSize(item.sizeInMl)})
+              {item.name}{' '}
+              {item.sizeInMl ? `(${translateSize(item.sizeInMl)})` : ''}
             </h5>
 
             <ItemAvailabilityBadge

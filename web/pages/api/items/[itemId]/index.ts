@@ -31,6 +31,32 @@ export type ApiGetItemResponse = Prisma.ItemGetPayload<{
   include: {
     brand: true;
     countings: { include: { inventory: { select: { createdAt: true } } } };
+    recipeComponents: {
+      select: {
+        id: true;
+        amount: true;
+        unit: true;
+        ingredientItem: {
+          select: {
+            id: true;
+            name: true;
+            sizeInMl: true;
+            inventoryEnabled: true;
+            waiterEnabled: true;
+            brand: {
+              select: {
+                name: true;
+              };
+            };
+            recipeComponents: {
+              select: {
+                id: true;
+              };
+            };
+          };
+        };
+      };
+    };
   };
 }>;
 
@@ -44,6 +70,35 @@ async function handleGET(
     include: {
       brand: true,
       countings: { include: { inventory: { select: { createdAt: true } } } },
+      recipeComponents: {
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          id: true,
+          amount: true,
+          unit: true,
+          ingredientItem: {
+            select: {
+              id: true,
+              name: true,
+              sizeInMl: true,
+              inventoryEnabled: true,
+              waiterEnabled: true,
+              brand: {
+                select: {
+                  name: true,
+                },
+              },
+              recipeComponents: {
+                select: {
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
   return res.json(item);

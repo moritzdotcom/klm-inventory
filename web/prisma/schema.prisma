@@ -44,19 +44,32 @@ model Event {
 }
 
 model Item {
-  id             String       @id @default(uuid())
-  category       ItemCategory
-  brandId        String
-  brand          Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  name           String
-  sizeInMl       Int
-  image          String       @default("")
-  amountInStock  Int          @default(0)
-  amountPerCrate Int          @default(1)
-  priceCents     Int          @default(0)
+  id       String       @id @default(uuid())
+  category ItemCategory
+  brandId  String
+  brand    Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name     String
 
   /**
-   * Globale Verfügbarkeit des Artikels.
+   * Für physische Gebinde: Flaschen- oder Bag-Größe.
+   * Für abstrakte Verkaufsprodukte wie "Aperol Boot" oder
+   * "10 × Estrella Bucket" kann das Feld leer bleiben.
+   */
+  sizeInMl Int?
+
+  image          String @default("")
+  amountInStock  Int    @default(0)
+  amountPerCrate Int    @default(1)
+  priceCents     Int    @default(0)
+
+  /**
+   * Globale Sichtbarkeit:
+   * Aperol-Flasche:
+   * inventoryEnabled = true
+   * waiterEnabled    = false oder true
+   * Aperol Boot:
+   * inventoryEnabled = false
+   * waiterEnabled    = true
    */
   inventoryEnabled Boolean @default(true)
   waiterEnabled    Boolean @default(true)
@@ -64,6 +77,61 @@ model Item {
   countings       Counting[]
   waiterIssues    EventWaiterIssue[]
   waiterIssueLogs EventWaiterIssueLog[]
+
+  /**
+   * Rezeptur:
+   * Dieses Item besteht aus anderen Items.
+   */
+  recipeComponents ItemRecipeComponent[] @relation("RecipeParent")
+
+  /**
+   * Rückwärtsrelation:
+   * Dieses Item wird als Zutat in anderen Items verwendet.
+   */
+  usedInRecipes ItemRecipeComponent[] @relation("RecipeIngredient")
+
+  /**
+   * Historische Snapshots für Event-Abrechnungen.
+   */
+  waiterIssueRecipeComponents EventWaiterIssueRecipeComponent[]
+}
+
+enum ItemCategory {
+  WATER
+  SOFTDRINK
+  BEER
+  WINE
+  LIQUOR
+  SPECIALS
+}
+
+model ItemRecipeComponent {
+  id String @id @default(uuid())
+
+  parentItemId String
+  parentItem   Item   @relation("RecipeParent", fields: [parentItemId], references: [id], onDelete: Cascade)
+
+  ingredientItemId String
+  ingredientItem   Item   @relation("RecipeIngredient", fields: [ingredientItemId], references: [id], onDelete: Restrict)
+
+  /**
+   * Immer eine positive Ganzzahl:
+   * 3 UNIT        = 3 Flaschen Secco
+   * 40 MILLILITER = 4 cl Lillet
+   */
+  amount Int
+  unit   RecipeUnit
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([parentItemId, ingredientItemId])
+  @@index([ingredientItemId])
+}
+
+enum RecipeUnit {
+  UNIT
+  MILLILITER
 }
 
 model Counting {
@@ -92,14 +160,6 @@ model Brand {
   id    String @id @default(uuid())
   name  String @unique
   items Item[]
-}
-
-enum ItemCategory {
-  WATER
-  SOFTDRINK
-  BEER
-  WINE
-  LIQUOR
 }
 
 /**
@@ -141,18 +201,37 @@ model EventWaiterIssue {
   settlement   EventSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
 
   itemId String
-  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
-  quantity       Int @default(0)
+  quantity       Int     @default(0)
   unitPriceCents Int
+  hidden         Boolean @default(false)
 
-  // Event-spezifische Sichtbarkeit
-  hidden Boolean @default(false)
+  recipeSnapshotCreatedAt DateTime?
+  recipeSnapshot          EventWaiterIssueRecipeComponent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([settlementId, itemId])
+}
+
+model EventWaiterIssueRecipeComponent {
+  id String @id @default(uuid())
+
+  issueId String
+  issue   EventWaiterIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  ingredientItemId String
+  ingredientItem   Item   @relation(fields: [ingredientItemId], references: [id], onDelete: Restrict)
+
+  amount Int
+  unit   RecipeUnit
+
+  createdAt DateTime @default(now())
+
+  @@unique([issueId, ingredientItemId, unit])
+  @@index([ingredientItemId])
 }
 
 /**

@@ -5,10 +5,14 @@ import Link from 'next/link';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { Skeleton } from '@mui/material';
 import { translateSize } from '@/lib/models/item';
-import { ApiGetItemResponse, ApiPutItemResponse } from '../api/items/[itemId]';
+import {
+  ApiGetItemResponse,
+  ApiPutItemResponse,
+} from '../../api/items/[itemId]';
 import EditIcon from '@mui/icons-material/Edit';
 import EditItemDialog from '@/components/dialogs/editItem';
 import InventoryChart from '@/components/utils/inventoryChart';
+import RecipeViewer from '@/components/items/recipeViewer';
 
 export default function ItemShowPage({ itemId }: { itemId: string }) {
   const [item, setItem] = useState<ApiGetItemResponse>();
@@ -45,7 +49,8 @@ export default function ItemShowPage({ itemId }: { itemId: string }) {
                 {item.brand.name}
               </h4>
               <h3 className="text-xl text-center text-sky-700">
-                {item.name} ({translateSize(item.sizeInMl)})
+                {item.name}
+                {item.sizeInMl ? ` (${translateSize(item.sizeInMl)})` : ''}
               </h3>
             </div>
           ) : (
@@ -64,27 +69,34 @@ export default function ItemShowPage({ itemId }: { itemId: string }) {
       </header>
       {item ? (
         <div className="px-3 flex flex-col gap-5 mt-8">
-          <div className="w-full">
-            <h4 className="text-base text-gray-600">Aktueller Bestand</h4>
-            <h3 className="text-3xl text-sky-700">
-              {item.amountInStock} Flaschen
-            </h3>
-          </div>
-          <div className="w-full">
-            <h4 className="text-base text-gray-600 text-center">
-              Historische Bestandsveränderung
-            </h4>
-            <div className="mt-3 w-full">
-              <InventoryChart
-                data={item.countings.map((c) => ({
-                  date: new Date(c.inventory.createdAt).toLocaleDateString(
-                    'de'
-                  ),
-                  stock: c.amount,
-                }))}
-              />
+          {item.inventoryEnabled && (
+            <div className="w-full">
+              <h4 className="text-base text-gray-600">Aktueller Bestand</h4>
+
+              <h3 className="text-3xl text-sky-700">
+                {item.amountInStock} Flaschen
+              </h3>
             </div>
-          </div>
+          )}
+          {item.inventoryEnabled && (
+            <div className="w-full">
+              <h4 className="text-base text-gray-600 text-center">
+                Historische Bestandsveränderung
+              </h4>
+
+              <div className="mt-3 w-full">
+                <InventoryChart
+                  data={item.countings.map((c) => ({
+                    date: new Date(c.inventory.createdAt).toLocaleDateString(
+                      'de',
+                    ),
+                    stock: c.amount,
+                  }))}
+                />
+              </div>
+            </div>
+          )}
+          <RecipeViewer itemId={item.id} components={item.recipeComponents} />
         </div>
       ) : (
         <div className="px-3">

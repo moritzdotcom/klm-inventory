@@ -45,7 +45,9 @@ export default function EditItemDialog({
   const [categoryError, setCategoryError] = useState('');
   const [brandName, setBrandName] = useState(item.brand.name);
   const [brandNameError, setBrandNameError] = useState('');
-  const [sizeInMl, setSizeInMl] = useState<number | string>(item.sizeInMl);
+  const [sizeInMl, setSizeInMl] = useState<number | string | null>(
+    item.sizeInMl,
+  );
   const [sizeInMlError, setSizeInMlError] = useState('');
   const [image, setImage] = useState(item.image);
   const [amountInStock, setAmountInStock] = useState<number | string>(

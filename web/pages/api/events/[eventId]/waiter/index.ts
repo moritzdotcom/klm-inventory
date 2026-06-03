@@ -4,6 +4,8 @@ import prisma from '@/lib/prismadb';
 import { withSerializableRetry } from '@/lib/prisma/withSerializableRetry';
 import { getServerSession } from '@/lib/models/session';
 import { publishWaiterChange } from '@/lib/realtime/publishWaiterChange';
+import { Prisma } from '@prisma/client';
+import { expandItemRecipeToLeaves } from '@/lib/models/expandItemRecipe';
 
 class ApiError extends Error {
   constructor(
@@ -30,6 +32,39 @@ function parseInteger(value: unknown, field: string) {
   }
 
   return value;
+}
+
+async function ensureRecipeSnapshot(
+  tx: Prisma.TransactionClient,
+  issue: {
+    id: string;
+    itemId: string;
+    recipeSnapshotCreatedAt: Date | null;
+  },
+) {
+  if (issue.recipeSnapshotCreatedAt) return;
+
+  const rows = await expandItemRecipeToLeaves(tx, issue.itemId);
+
+  if (rows.length > 0) {
+    await tx.eventWaiterIssueRecipeComponent.createMany({
+      data: rows.map((row) => ({
+        issueId: issue.id,
+        ingredientItemId: row.ingredientItemId,
+        amount: row.amount,
+        unit: row.unit,
+      })),
+    });
+  }
+
+  await tx.eventWaiterIssue.update({
+    where: {
+      id: issue.id,
+    },
+    data: {
+      recipeSnapshotCreatedAt: new Date(),
+    },
+  });
 }
 
 async function getWaiterView(eventId: string) {
@@ -201,7 +236,7 @@ export default async function handler(
             existingIssue?.unitPriceCents ?? item.priceCents;
 
           if (delta > 0) {
-            await tx.eventWaiterIssue.upsert({
+            const issue = await tx.eventWaiterIssue.upsert({
               where: {
                 settlementId_itemId: {
                   settlementId: settlement.id,
@@ -220,6 +255,7 @@ export default async function handler(
                 },
               },
             });
+            await ensureRecipeSnapshot(tx, issue);
           } else {
             const updateResult = await tx.eventWaiterIssue.updateMany({
               where: {

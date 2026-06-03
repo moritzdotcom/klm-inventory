@@ -1,5 +1,7 @@
 import { findOrCreateBrandByName } from '@/lib/models/brand';
+import { replaceItemRecipe } from '@/lib/models/saveItemRecipe';
 import { getServerSession } from '@/lib/models/session';
+import { parseRecipeComponents } from '@/lib/models/validateItemRecipe';
 import prisma from '@/lib/prismadb';
 import { Prisma } from '@prisma/client';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -53,20 +55,30 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
 
   const brand = await findOrCreateBrandByName(brandName);
 
-  const item = await prisma.item.create({
-    data: {
-      name,
-      category,
-      brandId: brand.id,
-      sizeInMl,
-      image,
-      priceCents,
-      amountInStock: Number(amountInStock),
-      amountPerCrate: Number(amountPerCrate),
-      inventoryEnabled,
-      waiterEnabled,
-    },
-    include: { brand: { select: { name: true } } },
+  const recipeComponents = parseRecipeComponents(req.body.recipeComponents);
+
+  const item = await prisma.$transaction(async (tx) => {
+    const createdItem = await tx.item.create({
+      data: {
+        name,
+        brandId: brand.id,
+        category,
+        sizeInMl: sizeInMl ? Number(sizeInMl) : null,
+        image,
+        amountInStock: amountInStock ? Number(amountInStock) : 0,
+        amountPerCrate: amountPerCrate ? Number(amountPerCrate) : 1,
+        priceCents,
+        inventoryEnabled,
+        waiterEnabled,
+      },
+      include: {
+        brand: true,
+      },
+    });
+
+    await replaceItemRecipe(tx, createdItem.id, recipeComponents);
+
+    return createdItem;
   });
 
   return res.json(item);

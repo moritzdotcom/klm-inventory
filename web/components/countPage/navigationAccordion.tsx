@@ -1,4 +1,4 @@
-import ItemImage from '@/components/utils/itemImage';
+import ItemImage from '@/components/items/image';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Collapse, MenuItem, MenuList } from '@mui/material';
 import { useMemo, useState } from 'react';
@@ -29,7 +29,7 @@ export default function NavigationAccordion({
         name: c,
         total: itemsInCategory.length,
         completed: countings.filter(({ itemId }) =>
-          itemsInCategory.includes(itemId)
+          itemsInCategory.includes(itemId),
         ).length,
       };
     });

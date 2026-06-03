@@ -1,4 +1,4 @@
-import ItemImage from '@/components/utils/itemImage';
+import ItemImage from '@/components/items/image';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import Link from 'next/link';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -22,7 +22,7 @@ export default function InventoryCountPage({
   inventoryId: string;
 }) {
   const [items, setItems] = useState<ApiGetInventoryCountingResponse['items']>(
-    []
+    [],
   );
   const [countings, setCountings] = useState<
     ApiGetInventoryCountingResponse['countings']
@@ -81,7 +81,7 @@ export default function InventoryCountPage({
             currentCounting
               ? currentCounting.amount - crates * currentItem.amountPerCrate
               : ''
-          }`
+          }`,
         );
         setAmount(`${currentCounting ? currentCounting.amount : ''}`);
         return 'crate';
@@ -111,7 +111,7 @@ export default function InventoryCountPage({
           currentCounting
             ? currentCounting.amount - crates * currentItem.amountPerCrate
             : ''
-        }`
+        }`,
       );
       setAmount(`${currentCounting ? currentCounting.amount : ''}`);
     } else {
@@ -126,7 +126,7 @@ export default function InventoryCountPage({
     const calcAmt =
       Number(residualAmount) + Number(crateAmount) * currentItem.amountPerCrate;
     setAmount(
-      `${crateAmount == '0' && residualAmount == '0' ? 0 : calcAmt || ''}`
+      `${crateAmount == '0' && residualAmount == '0' ? 0 : calcAmt || ''}`,
     );
   }, [crateAmount, residualAmount]);
 
@@ -135,7 +135,7 @@ export default function InventoryCountPage({
       ({ data }: { data: ApiGetInventoryCountingResponse }) => {
         setItems(data.items);
         setCountings(data.countings);
-      }
+      },
     );
   }, []);
 

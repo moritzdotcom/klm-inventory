@@ -31,7 +31,7 @@ import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRou
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import ItemImage from '@/components/utils/itemImage';
+import ItemImage from '@/components/items/image';
 import {
   CATEGORIES,
   isValidCategory,
@@ -596,7 +596,10 @@ export default function WaiterTrackingPage() {
     <main className="mx-auto min-h-screen w-full max-w-2xl bg-gray-50 pb-40">
       <header className="sticky top-0 z-20 bg-white/90 px-3 pb-3 pt-4 shadow-sm backdrop-blur">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center text-sm text-sky-600">
+          <Link
+            href="/events/waiter"
+            className="flex items-center text-sm text-sky-600"
+          >
             <ArrowBackIosIcon fontSize="inherit" />
             Zurück
           </Link>
@@ -813,14 +816,15 @@ function ItemCard({
         item.hidden ? 'opacity-55' : ''
       }`}
     >
-      <div className="flex items-center gap-3 px-3 py-3">
+      <div className="flex items-center gap-3 px-3 py-3 text-sky-700">
         <ItemImage image={item.image} category={item.category} />
 
         <div className="min-w-0 flex-grow">
           <p className="text-xs text-gray-500">{item.brand.name}</p>
 
           <h4 className="truncate text-base font-semibold text-gray-900">
-            {item.name} ({translateSize(item.sizeInMl)})
+            {item.name}{' '}
+            {item.sizeInMl ? `(${translateSize(item.sizeInMl)})` : ''}
           </h4>
 
           <p
