@@ -3,7 +3,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import AddIcon from '@mui/icons-material/Add';
-import { Skeleton } from '@mui/material';
+import { Chip, Skeleton } from '@mui/material';
 import { ApiGetItemsResponse, ApiPostItemResponse } from '../api/items';
 import NewItemDialog from '@/components/dialogs/newItem';
 import {
@@ -70,6 +70,67 @@ export default function ItemsPage() {
   );
 }
 
+function ItemAvailabilityBadge({
+  inventoryEnabled,
+  waiterEnabled,
+}: {
+  inventoryEnabled: boolean;
+  waiterEnabled: boolean;
+}) {
+  if (inventoryEnabled && waiterEnabled) {
+    return null;
+  }
+
+  if (!inventoryEnabled && waiterEnabled) {
+    return (
+      <Chip
+        size="small"
+        label="Nur Tischkellner"
+        sx={{
+          mt: 0.75,
+          height: 22,
+          bgcolor: 'warning.50',
+          color: 'warning.dark',
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+      />
+    );
+  }
+
+  if (inventoryEnabled && !waiterEnabled) {
+    return (
+      <Chip
+        size="small"
+        label="Nur Inventur"
+        sx={{
+          mt: 0.75,
+          height: 22,
+          bgcolor: 'info.50',
+          color: 'info.dark',
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+      />
+    );
+  }
+
+  return (
+    <Chip
+      size="small"
+      label="Deaktiviert"
+      sx={{
+        mt: 0.75,
+        height: 22,
+        bgcolor: 'grey.200',
+        color: 'grey.700',
+        fontSize: 11,
+        fontWeight: 600,
+      }}
+    />
+  );
+}
+
 function renderItems(loading: boolean, items: ApiGetItemsResponse) {
   if (loading)
     return (
@@ -100,17 +161,30 @@ function renderItems(loading: boolean, items: ApiGetItemsResponse) {
           className="w-full rounded-md shadow px-4 py-3 text-sky-700 flex items-center gap-3 text-2xl"
         >
           <ItemImage image={item.image} category={item.category} />
-          <div className="flex-grow">
+          <div className="min-w-0 flex-grow">
             <h6 className="text-base text-gray-600">{item.brand.name}</h6>
-            <h5 className="text-lg sm:text-xl">
+
+            <h5 className="truncate text-lg sm:text-xl">
               {item.name} ({translateSize(item.sizeInMl)})
             </h5>
+
+            <ItemAvailabilityBadge
+              inventoryEnabled={item.inventoryEnabled}
+              waiterEnabled={item.waiterEnabled}
+            />
           </div>
-          <div>
-            <h6 className="text-base text-gray-600">Bestand</h6>
-            <h5 className="text-lg sm:text-xl text-right">
-              {item.amountInStock}
-            </h5>
+          <div className="shrink-0 text-right">
+            {item.inventoryEnabled ? (
+              <>
+                <h6 className="text-base text-gray-600">Bestand</h6>
+                <h5 className="text-lg sm:text-xl">{item.amountInStock}</h5>
+              </>
+            ) : (
+              <>
+                <h6 className="text-base text-gray-400">Bestand</h6>
+                <h5 className="text-lg text-gray-300">-</h5>
+              </>
+            )}
           </div>
         </Link>
       </Fragment>

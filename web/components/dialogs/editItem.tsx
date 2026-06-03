@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import ErrorMessage from '@/components/utils/errorMessage';
 import { Close } from '@mui/icons-material';
 import {
+  Checkbox,
   FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Select,
@@ -51,6 +55,10 @@ export default function EditItemDialog({
     item.amountPerCrate,
   );
   const [amountPerCrateError, setAmountPerCrateError] = useState('');
+  const [inventoryEnabled, setInventoryEnabled] = useState(
+    item.inventoryEnabled,
+  );
+  const [waiterEnabled, setWaiterEnabled] = useState(item.waiterEnabled);
   const [formDirty, setFormDirty] = useState(false);
 
   const [brandOptions, setBrandOptions] = useState<ApiGetBrandsResponse>([]);
@@ -75,6 +83,8 @@ export default function EditItemDialog({
           priceCents,
           amountInStock,
           amountPerCrate,
+          inventoryEnabled,
+          waiterEnabled,
         },
       });
       onSuccess?.(data);
@@ -225,6 +235,34 @@ export default function EditItemDialog({
             />
             <ErrorMessage message={amountPerCrateError} />
           </div>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={inventoryEnabled}
+                  onChange={(event) =>
+                    setInventoryEnabled(event.target.checked)
+                  }
+                />
+              }
+              label="In der Inventur anzeigen"
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={waiterEnabled}
+                  onChange={(event) => setWaiterEnabled(event.target.checked)}
+                />
+              }
+              label="Für Tischkellner verfügbar"
+            />
+
+            <FormHelperText>
+              Specials, Shots und Kombi-Produkte können ausschließlich für den
+              Tischkellner aktiviert werden.
+            </FormHelperText>
+          </FormGroup>
           <ErrorMessage message={submitError} />
           <button
             className="btn-primary disabled:opacity-80"

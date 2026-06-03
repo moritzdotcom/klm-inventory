@@ -47,6 +47,8 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
     priceCents,
     amountInStock,
     amountPerCrate,
+    inventoryEnabled,
+    waiterEnabled,
   } = req.body;
 
   const brand = await findOrCreateBrandByName(brandName);
@@ -61,6 +63,8 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
       priceCents,
       amountInStock: Number(amountInStock),
       amountPerCrate: Number(amountPerCrate),
+      inventoryEnabled,
+      waiterEnabled,
     },
     include: { brand: { select: { name: true } } },
   });

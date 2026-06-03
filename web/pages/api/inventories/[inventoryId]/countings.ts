@@ -5,7 +5,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method === 'GET') {
     await handleGET(req, res);
@@ -13,7 +13,7 @@ export default async function handle(
     await handlePOST(req, res);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -51,7 +51,10 @@ async function handleGET(req: NextApiRequest, res: NextApiResponse) {
     where: { inventoryId },
     select: { amount: true, itemId: true },
   });
-  const items = await prisma.item.findMany({ include: { brand: true } });
+  const items = await prisma.item.findMany({
+    where: { inventoryEnabled: true },
+    include: { brand: true },
+  });
   return res.json({ countings, items });
 }
 

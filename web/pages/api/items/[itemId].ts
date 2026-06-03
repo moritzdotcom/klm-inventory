@@ -69,6 +69,8 @@ async function handlePUT(
     priceCents,
     amountInStock,
     amountPerCrate,
+    inventoryEnabled,
+    waiterEnabled,
   } = req.body;
 
   const brand = brandName
@@ -85,6 +87,8 @@ async function handlePUT(
       priceCents: priceCents ? priceCents : undefined,
       amountInStock: amountInStock ? Number(amountInStock) : undefined,
       amountPerCrate: amountPerCrate ? Number(amountPerCrate) : undefined,
+      inventoryEnabled,
+      waiterEnabled,
     },
     include: { brand: true },
   });

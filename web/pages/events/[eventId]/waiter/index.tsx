@@ -5,11 +5,13 @@ import { useRouter } from 'next/router';
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputLabel,
   MenuItem,
@@ -50,6 +52,7 @@ type CreateItemPayload = {
   category: ItemCategory;
   sizeInMl: number;
   priceCents: number;
+  inventoryEnabled: boolean;
 };
 
 type CreateItemResponse = {
@@ -270,6 +273,8 @@ export default function WaiterTrackingPage() {
         totalCents: 0,
         hidden: false,
         priceConfigured: payload.priceCents > 0,
+        inventoryEnabled: payload.inventoryEnabled,
+        waiterEnabled: true,
       };
 
       setItemDialogOpen(false);
@@ -967,6 +972,7 @@ function QuickItemDialog({
   const [category, setCategory] = useState('');
   const [sizeInMl, setSizeInMl] = useState('');
   const [price, setPrice] = useState('');
+  const [inventoryEnabled, setInventoryEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -979,6 +985,7 @@ function QuickItemDialog({
     setBrandName('');
     setCategory('');
     setSizeInMl('');
+    setInventoryEnabled(false);
 
     /**
      * Bei Preis 0 bleibt das Input bewusst leer.
@@ -1022,6 +1029,7 @@ function QuickItemDialog({
         category: parsedCategory,
         sizeInMl: parsedSize,
         priceCents,
+        inventoryEnabled,
       });
     } finally {
       setSaving(false);
@@ -1091,6 +1099,17 @@ function QuickItemDialog({
                 label="Artikelname"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={inventoryEnabled}
+                    onChange={(event) =>
+                      setInventoryEnabled(event.target.checked)
+                    }
+                  />
+                }
+                label="Zusätzlich in der Inventur anzeigen"
               />
             </>
           )}

@@ -57,6 +57,7 @@ async function getWaiterView(eventId: string) {
 
   const [items, brands] = await Promise.all([
     prisma.item.findMany({
+      where: { waiterEnabled: true },
       include: {
         brand: true,
       },
@@ -95,6 +96,8 @@ async function getWaiterView(eventId: string) {
       totalCents: quantity * unitPriceCents,
       hidden: issue?.hidden ?? false,
       priceConfigured: unitPriceCents > 0,
+      inventoryEnabled: item.inventoryEnabled,
+      waiterEnabled: item.waiterEnabled,
     };
   });
 

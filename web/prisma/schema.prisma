@@ -50,12 +50,16 @@ model Item {
   brand          Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
   name           String
   sizeInMl       Int
-  image          String
-  amountInStock  Int
-  amountPerCrate Int
+  image          String       @default("")
+  amountInStock  Int          @default(0)
+  amountPerCrate Int          @default(1)
+  priceCents     Int          @default(0)
 
-  // Verkaufspreis pro Flasche / Einheit
-  priceCents Int @default(0)
+  /**
+   * Globale Verfügbarkeit des Artikels.
+   */
+  inventoryEnabled Boolean @default(true)
+  waiterEnabled    Boolean @default(true)
 
   countings       Counting[]
   waiterIssues    EventWaiterIssue[]

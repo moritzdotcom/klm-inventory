@@ -5,7 +5,7 @@ services:
     build:
       context: ./web
     restart: always
-    command: bash -c "npm install --unsafe-perm && npm run build && npm run start"
+    command: bash -c "npm install --unsafe-perm && npx prisma generate && npm run build && npm run start"
     volumes:
       - "./web:/web"
     ports:

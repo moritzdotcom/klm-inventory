@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Item" ADD COLUMN     "inventoryEnabled" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "waiterEnabled" BOOLEAN NOT NULL DEFAULT true,
+ALTER COLUMN "image" SET DEFAULT '',
+ALTER COLUMN "amountInStock" SET DEFAULT 0,
+ALTER COLUMN "amountPerCrate" SET DEFAULT 1;

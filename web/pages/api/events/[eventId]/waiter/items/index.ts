@@ -76,6 +76,11 @@ export default async function handler(
       throw new ApiError(400, 'Der Preis muss größer als 0 sein');
     }
 
+    const inventoryEnabled =
+      typeof req.body?.inventoryEnabled === 'boolean'
+        ? req.body.inventoryEnabled
+        : false;
+
     const createdItem = await prisma.$transaction(async (tx) => {
       const settlement = await tx.eventSettlement.upsert({
         where: { eventId },
@@ -93,6 +98,8 @@ export default async function handler(
           amountInStock: 0,
           amountPerCrate: 1,
           image: '',
+          inventoryEnabled,
+          waiterEnabled: true,
         },
         include: {
           brand: true,
@@ -128,6 +135,8 @@ export default async function handler(
         totalCents: 0,
         hidden: false,
         priceConfigured: createdItem.priceCents > 0,
+        inventoryEnabled: createdItem.inventoryEnabled,
+        waiterEnabled: createdItem.waiterEnabled,
       },
     });
   } catch (error) {
