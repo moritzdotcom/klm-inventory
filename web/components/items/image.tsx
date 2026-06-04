@@ -4,6 +4,7 @@ import SportsBarIcon from '@mui/icons-material/SportsBar';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WineBarIcon from '@mui/icons-material/WineBar';
+import BrunchDiningIcon from '@mui/icons-material/BrunchDining';
 import LocalDrinkIcon from '@mui/icons-material/LocalDrink';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
@@ -19,6 +20,8 @@ function Icon({ category }: { category: ItemCategory }) {
       return <WaterDropIcon fontSize="inherit" />;
     case 'WINE':
       return <WineBarIcon fontSize="inherit" />;
+    case 'CHAMPAGNE':
+      return <BrunchDiningIcon fontSize="inherit" />;
     case 'SPECIALS':
       return <AutoAwesomeIcon fontSize="inherit" />;
   }

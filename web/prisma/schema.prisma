@@ -101,6 +101,7 @@ enum ItemCategory {
   SOFTDRINK
   BEER
   WINE
+  CHAMPAGNE
   LIQUOR
   SPECIALS
 }

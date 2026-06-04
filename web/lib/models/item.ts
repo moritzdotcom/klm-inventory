@@ -1,13 +1,13 @@
 import { ItemCategory } from '@prisma/client';
 
-export const CATEGORIES = Object.keys(ItemCategory);
+export const CATEGORIES = Object.values(ItemCategory);
 
 export const SIZESINML = [
   200, 250, 333, 500, 700, 750, 1000, 1500, 1750, 3000, 6000, 10000,
 ];
 
 export function isValidCategory(c: string): c is ItemCategory {
-  return CATEGORIES.includes(c);
+  return c in CATEGORIES;
 }
 
 export function translateCategory(c: string) {
@@ -16,9 +16,35 @@ export function translateCategory(c: string) {
     SOFTDRINK: 'Soft Drink',
     BEER: 'Bier',
     WINE: 'Wein',
+    CHAMPAGNE: 'Champagner',
     LIQUOR: 'Spirituosen',
     SPECIALS: 'Specials',
   }[c];
+}
+
+const ITEM_CATEGORY_ORDER: ItemCategory[] = [
+  ItemCategory.WATER,
+  ItemCategory.SOFTDRINK,
+  ItemCategory.BEER,
+  ItemCategory.WINE,
+  ItemCategory.CHAMPAGNE,
+  ItemCategory.LIQUOR,
+  ItemCategory.SPECIALS,
+];
+
+export function categoryCompareFn(a: ItemCategory, b: ItemCategory) {
+  const aIndex = ITEM_CATEGORY_ORDER.indexOf(a);
+  const bIndex = ITEM_CATEGORY_ORDER.indexOf(b);
+
+  /**
+   * Falls später eine neue Kategorie ergänzt wird, die noch nicht
+   * im Array steht, landet sie automatisch am Ende.
+   */
+  const safeAIndex = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+
+  const safeBIndex = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+
+  return safeAIndex - safeBIndex;
 }
 
 export function translateSize(s: Number | null) {
@@ -47,11 +73,23 @@ type ItemCompareFnItem = {
 };
 
 export function itemCompareFn(a: ItemCompareFnItem, b: ItemCompareFnItem) {
-  const categoryComparison = a.category.localeCompare(b.category);
-  if (categoryComparison !== 0) return categoryComparison;
-  const brandComparison = a.brand.name.localeCompare(b.brand.name);
-  if (brandComparison !== 0) return brandComparison;
-  const nameComparison = a.name.localeCompare(b.name);
-  if (nameComparison !== 0) return nameComparison;
-  return Number(a.sizeInMl) - Number(b.sizeInMl);
+  const categoryComparison = categoryCompareFn(a.category, b.category);
+
+  if (categoryComparison !== 0) {
+    return categoryComparison;
+  }
+
+  const brandComparison = a.brand.name.localeCompare(b.brand.name, 'de');
+
+  if (brandComparison !== 0) {
+    return brandComparison;
+  }
+
+  const nameComparison = a.name.localeCompare(b.name, 'de');
+
+  if (nameComparison !== 0) {
+    return nameComparison;
+  }
+
+  return Number(a.sizeInMl ?? 0) - Number(b.sizeInMl ?? 0);
 }

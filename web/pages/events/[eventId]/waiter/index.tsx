@@ -34,7 +34,9 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import ItemImage from '@/components/items/image';
 import {
   CATEGORIES,
+  categoryCompareFn,
   isValidCategory,
+  itemCompareFn,
   SIZESINML,
   translateCategory,
   translateSize,
@@ -529,7 +531,14 @@ export default function WaiterTrackingPage() {
       groups.set(item.category, rows);
     }
 
-    return Array.from(groups.entries());
+    return Array.from(groups.entries())
+      .sort(([categoryA], [categoryB]) =>
+        categoryCompareFn(categoryA, categoryB),
+      )
+      .map(
+        ([category, items]) =>
+          [category, [...items].sort(itemCompareFn)] as const,
+      );
   }, [visibleItems]);
 
   useEffect(() => {

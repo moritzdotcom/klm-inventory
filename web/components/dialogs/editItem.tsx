@@ -102,26 +102,15 @@ export default function EditItemDialog({
     let nameErrorValue = '';
     let categoryErrorValue = '';
     let brandNameErrorValue = '';
-    let sizeInMlErrorValue = '';
-    let amountPerCrateErrorValue = '';
 
     if (!name) nameErrorValue = 'Name darf nicht leer sein';
     if (!category) categoryErrorValue = 'Kategorie darf nicht leer sein';
     if (!brandName) brandNameErrorValue = 'Marke darf nicht leer sein';
-    if (!sizeInMl) sizeInMlErrorValue = 'Gebindegröße darf nicht leer sein';
-    if (!amountPerCrate)
-      amountPerCrateErrorValue = 'Flaschen/Kiste darf nicht leer sein';
     setNameError(nameErrorValue);
     setCategoryError(categoryErrorValue);
     setBrandNameError(brandNameErrorValue);
-    setSizeInMlError(sizeInMlErrorValue);
-    setAmountPerCrateError(amountPerCrateErrorValue);
     return !Boolean(
-      nameErrorValue ||
-      categoryErrorValue ||
-      brandNameErrorValue ||
-      sizeInMlErrorValue ||
-      amountPerCrateErrorValue,
+      nameErrorValue || categoryErrorValue || brandNameErrorValue,
     );
   };
 
