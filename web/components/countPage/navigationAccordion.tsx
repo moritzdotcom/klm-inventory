@@ -3,7 +3,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Collapse, MenuItem, MenuList } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { ApiGetInventoryCountingResponse } from '@/pages/api/inventories/[inventoryId]/countings';
-import { translateCategory } from '@/lib/models/item';
+import { categoryCompareFn, translateCategory } from '@/lib/models/item';
 import { ItemCategory } from '@prisma/client';
 
 export default function NavigationAccordion({
@@ -11,7 +11,7 @@ export default function NavigationAccordion({
   countings,
   onClickCategory,
 }: {
-  items: ApiGetInventoryCountingResponse['items'];
+  items: Array<{ id: string; category: ItemCategory }>;
   countings: ApiGetInventoryCountingResponse['countings'];
   onClickCategory: (c: ItemCategory) => void;
 }) {
@@ -20,7 +20,7 @@ export default function NavigationAccordion({
   const categories = useMemo(() => {
     const categoryList = [
       ...new Set(items.map(({ category }) => category)),
-    ].sort((a, b) => a.localeCompare(b));
+    ].sort(categoryCompareFn);
     return categoryList.map((c) => {
       const itemsInCategory = items
         .filter(({ category }) => category == c)

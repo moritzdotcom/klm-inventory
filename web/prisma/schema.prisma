@@ -14,13 +14,16 @@ datasource db {
 }
 
 model User {
-  id              String                @id @default(uuid())
-  name            String
-  email           String                @unique
-  password        String
-  inventories     Inventory[]
-  sessions        Session[]
-  waiterIssueLogs EventWaiterIssueLog[]
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+
+  inventories Inventory[]
+  sessions    Session[]
+
+  waiterIssueLogs   EventWaiterIssueLog[]
+  employeeDrinkLogs EventEmployeeDrinkLog[]
 }
 
 model Session {
@@ -36,11 +39,20 @@ model Invite {
 }
 
 model Event {
-  id          String           @id @default(uuid())
-  name        String
-  date        DateTime
-  inventories Inventory[]
-  settlement  EventSettlement?
+  id   String   @id @default(uuid())
+  name String
+  date DateTime
+
+  /**
+   * Abrechnung des Tischkellners inklusive Umsatz.
+   */
+  settlement EventSettlement?
+
+  /**
+   * Anfangsbestand, Endbestand und Mitarbeitergetränke
+   * für dieses Event.
+   */
+  inventory EventInventory?
 }
 
 model Item {
@@ -62,37 +74,32 @@ model Item {
   amountPerCrate Int    @default(1)
   priceCents     Int    @default(0)
 
-  /**
-   * Globale Sichtbarkeit:
-   * Aperol-Flasche:
-   * inventoryEnabled = true
-   * waiterEnabled    = false oder true
-   * Aperol Boot:
-   * inventoryEnabled = false
-   * waiterEnabled    = true
-   */
   inventoryEnabled Boolean @default(true)
   waiterEnabled    Boolean @default(true)
 
-  countings       Counting[]
+  /**
+   * Freie, eventunabhängige Lagerinventuren.
+   */
+  countings Counting[]
+
+  /**
+   * Eventbezogene Kühlwagen-Zählungen:
+   * Anfangs- und Endbestand.
+   */
+  eventInventoryCountings EventInventoryCounting[]
+
+  /**
+   * Mitarbeitergetränke.
+   */
+  employeeDrinkIssues EventEmployeeDrinkIssue[]
+  employeeDrinkLogs   EventEmployeeDrinkLog[]
+
   waiterIssues    EventWaiterIssue[]
   waiterIssueLogs EventWaiterIssueLog[]
 
-  /**
-   * Rezeptur:
-   * Dieses Item besteht aus anderen Items.
-   */
   recipeComponents ItemRecipeComponent[] @relation("RecipeParent")
+  usedInRecipes    ItemRecipeComponent[] @relation("RecipeIngredient")
 
-  /**
-   * Rückwärtsrelation:
-   * Dieses Item wird als Zutat in anderen Items verwendet.
-   */
-  usedInRecipes ItemRecipeComponent[] @relation("RecipeIngredient")
-
-  /**
-   * Historische Snapshots für Event-Abrechnungen.
-   */
   waiterIssueRecipeComponents EventWaiterIssueRecipeComponent[]
 }
 
@@ -135,26 +142,43 @@ enum RecipeUnit {
   MILLILITER
 }
 
+/**
+ * Eine frei erstellbare Lagerinventur.
+ * Beispiele:
+ * - Hauptlager vor dem Wochenende
+ * - Kühlwagen nach Event-Rückkehr
+ * - Monatsinventur
+ * Diese Inventur ist nicht zwingend einem Event zugeordnet.
+ */
+model Inventory {
+  id String @id @default(uuid())
+
+  label String?
+  note  String?
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  countings Counting[]
+
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
 model Counting {
-  id          String    @id @default(uuid())
-  amount      Int
-  itemId      String
-  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  id String @id @default(uuid())
+
+  amount Int
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, inventoryId])
-}
-
-model Inventory {
-  id        String     @id @default(uuid())
-  createdAt DateTime   @default(now())
-  creatorId String
-  creator   User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  countings Counting[]
-  eventId   String
-  lastEvent Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  done      Boolean    @default(false)
+  @@index([inventoryId])
 }
 
 model Brand {
@@ -180,6 +204,17 @@ model EventSettlement {
   // Einnahmen, die der Tischkellner nach dem Event meldet
   cashRevenueCents Int @default(0)
   cardRevenueCents Int @default(0)
+
+  /**
+   * Tatsächlich gemeldete Einnahmen der offenen Theke.
+   */
+  openBarCashRevenueCents Int @default(0)
+  openBarCardRevenueCents Int @default(0)
+
+  /**
+   * Freitext für Auffälligkeiten oder Hinweise zur Abrechnung.
+   */
+  analysisNote String?
 
   closedAt DateTime?
 
@@ -256,4 +291,108 @@ model EventWaiterIssueLog {
   createdAt      DateTime @default(now())
 
   @@index([settlementId, createdAt])
+}
+
+/**
+ * Bestandsführung für genau ein Event.
+ * Enthält:
+ * - Kühlwagen-Anfangsbestand
+ * - Kühlwagen-Endbestand
+ * - Mitarbeitergetränke
+ * Die Tischkellner-Ausgaben liegen weiterhin separat
+ * im EventSettlement.
+ */
+model EventInventory {
+  id String @id @default(uuid())
+
+  eventId String @unique
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  countings EventInventoryCounting[]
+
+  employeeDrinkIssues EventEmployeeDrinkIssue[]
+  employeeDrinkLogs   EventEmployeeDrinkLog[]
+
+  openingCompletedAt        DateTime?
+  employeeDrinksCompletedAt DateTime?
+  closingCompletedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EventInventoryCountingPhase {
+  OPENING
+  CLOSING
+}
+
+/**
+ * Gezählte Gebinde im Kühlwagen zu Beginn oder Ende eines Events.
+ * Ein Item darf pro Event und Phase nur einmal vorkommen.
+ */
+model EventInventoryCounting {
+  id String @id @default(uuid())
+
+  eventInventoryId String
+  eventInventory   EventInventory @relation(fields: [eventInventoryId], references: [id], onDelete: Cascade)
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  phase  EventInventoryCountingPhase
+  amount Int                         @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventInventoryId, itemId, phase])
+  @@index([itemId])
+}
+
+/**
+ * Aktuelle Gesamtsumme der Mitarbeitergetränke pro Artikel.
+ * Beispiel:
+ * - 14 × Estrella
+ * - 8 × Wasser Still
+ * - 3 × Fritz-Kola
+ */
+model EventEmployeeDrinkIssue {
+  id String @id @default(uuid())
+
+  eventInventoryId String
+  eventInventory   EventInventory @relation(fields: [eventInventoryId], references: [id], onDelete: Cascade)
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  quantity Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventInventoryId, itemId])
+  @@index([itemId])
+}
+
+/**
+ * Unveränderliches Änderungsprotokoll für Mitarbeitergetränke.
+ * quantityDelta kann beispielsweise 1, 6, 12 oder -1 sein.
+ */
+model EventEmployeeDrinkLog {
+  id String @id @default(uuid())
+
+  eventInventoryId String
+  eventInventory   EventInventory @relation(fields: [eventInventoryId], references: [id], onDelete: Cascade)
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+
+  quantityDelta Int
+  createdAt     DateTime @default(now())
+
+  @@index([eventInventoryId, createdAt])
+  @@index([itemId])
 }

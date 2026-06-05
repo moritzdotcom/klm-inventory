@@ -349,7 +349,6 @@ async function main() {
 
   const inventory = await prisma.inventory.create({
     data: {
-      lastEvent: { connect: event },
       creator: { connect: usr },
       countings: {
         createMany: {

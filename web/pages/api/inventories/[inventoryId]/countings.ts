@@ -33,7 +33,7 @@ export type ApiGetInventoryCountingResponse = {
     id: string;
     category: ItemCategory;
     brandId: string;
-    sizeInMl: number;
+    sizeInMl: number | null;
     image: string;
     amountInStock: number;
     amountPerCrate: number;

@@ -41,7 +41,7 @@ function OpenInventoryLink({
 }: {
   inventory: ApiGetOpenInventoriesResponse[number];
 }) {
-  const { id, creator, lastEvent } = inventory;
+  const { id, creator, label } = inventory;
   return (
     <Link
       href={`/inventories/${id}/count`}
@@ -54,7 +54,7 @@ function OpenInventoryLink({
           fortsetzen
         </p>
         <p className="text-base text-gray-500">
-          {lastEvent.name} | von: {creator.name}
+          {label} | von: {creator.name}
         </p>
       </div>
     </Link>

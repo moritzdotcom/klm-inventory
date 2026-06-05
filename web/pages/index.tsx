@@ -48,7 +48,6 @@ export default function Home({ session }: { session: Session }) {
       <LinkItem href="/warehouse" text="Lager" Icon={WarehouseIcon} />
       <LinkItem href="/inventories" text="Inventuren" Icon={HistoryIcon} />
       <LinkItem href="/events/waiter" text="Event-Tracker" Icon={IsoIcon} />
-      <LinkItem href="/inventories/new" text="Neue Inventur" Icon={AddIcon} />
       <LinkItem href="/users" text="Benutzerverwaltung" Icon={PersonIcon} />
       <OpenInventoriesLink inventories={openInventories} />
       <AppFooter />
@@ -84,7 +83,7 @@ function OpenInventoriesLink({
   if (inventories.length == 0) return null;
 
   if (inventories.length == 1) {
-    const { id, creator, lastEvent } = inventories[0];
+    const { id, creator, label } = inventories[0];
     return (
       <Link
         href={`/inventories/${id}/count`}
@@ -94,7 +93,7 @@ function OpenInventoriesLink({
         <div>
           <p className="text-xl text-amber-700">Letzte Inventur fortsetzen</p>
           <p className="text-base text-gray-500">
-            {lastEvent.name} | von: {creator.name}
+            {label} | von: {creator.name}
           </p>
         </div>
       </Link>
