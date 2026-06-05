@@ -37,7 +37,7 @@ export default function RecipeViewer({ itemId, components }: Props) {
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            Theoretischer Verbrauch pro herausgegebener Flasche
+            Theoretischer Verbrauch
           </Typography>
         </Box>
 

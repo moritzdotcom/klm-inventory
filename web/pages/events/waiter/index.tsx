@@ -132,7 +132,7 @@ function EventCard({ event }: { event: ApiGetWaiterEventsResponse[number] }) {
           value={formatCurrency(event.prepaidMinimumSpendCents)}
         />
 
-        <SummaryTile label="Flaschen" value={String(event.issuedQuantity)} />
+        <SummaryTile label="Artikel" value={String(event.issuedQuantity)} />
 
         <SummaryTile
           label="Warenwert"

@@ -132,7 +132,7 @@ export default function WaiterLogsPage() {
 
                     <p className="text-sm text-gray-500">
                       {translateSize(log.item.sizeInMl)} ·{' '}
-                      {formatCurrency(log.unitPriceCents)} je Flasche
+                      {formatCurrency(log.unitPriceCents)} je Artikel
                     </p>
 
                     <p className="mt-1 text-xs text-gray-400">

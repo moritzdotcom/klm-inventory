@@ -256,11 +256,12 @@ export default function WaiterEvaluationPage() {
                     <p className="text-xs text-gray-400">{item.brandName}</p>
 
                     <p className="truncate font-medium text-gray-900">
-                      {item.name} ({translateSize(item.sizeInMl)})
+                      {item.name}{' '}
+                      {item.sizeInMl ? `(${translateSize(item.sizeInMl)})` : ''}
                     </p>
 
                     <p className="text-xs text-gray-500">
-                      {formatCurrency(item.unitPriceCents)} je Flasche
+                      {formatCurrency(item.unitPriceCents)} je Artikel
                     </p>
                   </div>
 

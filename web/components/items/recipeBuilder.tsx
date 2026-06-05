@@ -351,7 +351,7 @@ export default function RecipeBuilder({
           }}
         >
           <Typography variant="caption" fontWeight={700} color="primary.dark">
-            Vorschau pro herausgegebener Flasche
+            Rezept-Vorschau
           </Typography>
 
           <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mt: 0.75 }}>

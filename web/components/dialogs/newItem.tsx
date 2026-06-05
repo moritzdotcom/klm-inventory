@@ -203,7 +203,7 @@ export default function NewItemDialog({
           <div>
             <TextField
               fullWidth
-              label="Verkaufspreis pro Flasche in €"
+              label="Verkaufspreis pro Artikel in €"
               type="number"
               inputProps={{
                 min: 0,
@@ -215,7 +215,7 @@ export default function NewItemDialog({
           </div>
           <div>
             <TextField
-              label="Flaschen im Bestand"
+              label="Artikel im Bestand"
               variant="outlined"
               fullWidth
               type="number"

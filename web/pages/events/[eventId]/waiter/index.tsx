@@ -844,7 +844,7 @@ function ItemCard({
             }`}
           >
             {item.priceConfigured
-              ? `${formatCurrency(item.unitPriceCents)} je Flasche`
+              ? `${formatCurrency(item.unitPriceCents)} je Artikel`
               : 'Preis fehlt'}
           </p>
         </div>
@@ -861,13 +861,13 @@ function ItemCard({
       </div>
 
       {mode === 'TRACK' ? (
-        <div className="grid grid-cols-2 gap-2 bg-gray-50 p-2">
+        <div className="grid grid-cols-5 gap-2 bg-gray-50 p-2">
           <button
             type="button"
             disabled={item.quantity === 0}
             onClick={() => onTrack(item.id, -1)}
-            className="flex min-h-16 items-center justify-center rounded-xl bg-white text-gray-600 shadow-sm transition active:scale-[0.98] disabled:text-gray-300 disabled:shadow-none"
-            aria-label={`${item.name}: eine Flasche entfernen`}
+            className="flex min-h-14 items-center justify-center rounded-xl bg-white text-gray-600 shadow-sm transition active:scale-[0.98] disabled:text-gray-300 disabled:shadow-none col-span-2"
+            aria-label={`${item.name}: eine Artikel entfernen`}
           >
             <RemoveIcon />
           </button>
@@ -876,9 +876,9 @@ function ItemCard({
             type="button"
             disabled={!item.priceConfigured}
             onClick={() => onTrack(item.id, 1)}
-            className="flex min-h-16 items-center justify-center gap-1 rounded-xl bg-sky-700 text-lg font-semibold text-white shadow-sm transition active:scale-[0.98] active:bg-sky-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
+            className="flex min-h-14 items-center justify-center gap-1 rounded-xl bg-sky-700 text-lg font-semibold text-white shadow-sm transition active:scale-[0.98] active:bg-sky-800 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none col-span-3"
           >
-            <AddIcon />1 Flasche
+            <AddIcon />1
           </button>
         </div>
       ) : (
