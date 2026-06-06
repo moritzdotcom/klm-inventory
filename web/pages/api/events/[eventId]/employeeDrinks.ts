@@ -102,9 +102,6 @@ async function handleGET(
     }),
 
     prisma.item.findMany({
-      where: {
-        OR: [{ inventoryEnabled: true, waiterEnabled: true }],
-      },
       include: {
         brand: true,
       },
