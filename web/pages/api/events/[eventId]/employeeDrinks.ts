@@ -77,36 +77,39 @@ async function handleGET(
   const session = await getServerSession(req);
   if (!session) return res.status(401).json('Not authenticated');
 
-  const [event, items] = await Promise.all([
-    prisma.event.findUnique({
-      where: {
-        id: eventId,
-      },
-      select: {
-        id: true,
-        name: true,
-        date: true,
-        inventory: {
-          select: {
-            employeeDrinksCompletedAt: true,
-            employeeDrinkIssues: {
-              select: {
-                itemId: true,
-                quantity: true,
-                updatedAt: true,
+  const event = await prisma.event.findUnique({
+    where: {
+      id: eventId,
+    },
+    select: {
+      id: true,
+      name: true,
+      date: true,
+      inventory: {
+        select: {
+          countings: {
+            where: {
+              phase: 'OPENING',
+              amount: { gt: 0 },
+            },
+            select: {
+              item: {
+                include: { brand: true },
               },
+            },
+          },
+          employeeDrinksCompletedAt: true,
+          employeeDrinkIssues: {
+            select: {
+              itemId: true,
+              quantity: true,
+              updatedAt: true,
             },
           },
         },
       },
-    }),
-
-    prisma.item.findMany({
-      include: {
-        brand: true,
-      },
-    }),
-  ]);
+    },
+  });
 
   if (!event) return res.status(404).json('Event not found');
 
@@ -118,7 +121,7 @@ async function handleGET(
     },
     completedAt:
       event.inventory?.employeeDrinksCompletedAt?.toISOString() || null,
-    items,
+    items: event.inventory?.countings.map((c) => c.item) ?? [],
     issues:
       event.inventory?.employeeDrinkIssues.map((issue) => ({
         itemId: issue.itemId,

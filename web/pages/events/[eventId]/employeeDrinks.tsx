@@ -390,7 +390,7 @@ function EmployeeDrinkCard({
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
       <div className="flex gap-3">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100 text-sky-600 text-3xl">
           <ItemImage image={item.image} category={item.category} />
         </div>
 
@@ -419,7 +419,7 @@ function EmployeeDrinkCard({
           disabled={disabled || saving || quantity === 0}
           startIcon={<RemoveRoundedIcon />}
           onClick={() => onChange(-1)}
-          sx={{ gridColumn: 'span 2 / span 2' }}
+          sx={{ gridColumn: 'span 2 / span 2', color: 'GrayText' }}
         >
           1
         </Button>
