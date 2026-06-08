@@ -196,6 +196,35 @@ async function handleGET(
               name: true,
             },
           },
+
+          /**
+           * Alle Verkaufsartikel, die diesen Lagerartikel verwenden.
+           *
+           * Beispiel:
+           * Espresso Martini Bag -> Espresso Martini, Espresso Martini Shot
+           */
+          usedInRecipes: {
+            select: {
+              amount: true,
+              unit: true,
+
+              parentItem: {
+                select: {
+                  id: true,
+                  name: true,
+                  priceCents: true,
+                  waiterEnabled: true,
+
+                  brand: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       }),
     ]);
@@ -254,7 +283,10 @@ async function handleGET(
           cardRevenueCents:
             settlement.cardRevenueCents + settlement.openBarCardRevenueCents,
 
-          totalRevenueCents: waiterTotalRevenueCents + openBarTotalRevenueCents,
+          totalRevenueCents:
+            waiterTotalRevenueCents +
+            openBarTotalRevenueCents +
+            settlement.prepaidMinimumSpendCents,
         },
       },
 

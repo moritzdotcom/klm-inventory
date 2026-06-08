@@ -176,7 +176,10 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
             total: {
               cashRevenueCents: cashTotal,
               cardRevenueCents: cardTotal,
-              totalRevenueCents: cashTotal + cardTotal,
+              totalRevenueCents:
+                cashTotal +
+                cardTotal +
+                currentData.revenue.waiter.prepaidMinimumSpendCents,
             },
           },
         };
@@ -266,6 +269,17 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <MetricCard
+              title="Reservierungen MVZ"
+              value={formatCurrency(
+                data.revenue.waiter.prepaidMinimumSpendCents,
+              )}
+              helper="Vorab bezahlt"
+              icon={<LocalBarRoundedIcon />}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <MetricCard
               title="Tischkellner"
               value={formatCurrency(data.revenue.waiter.totalRevenueCents)}
               helper="Gemeldete Einnahmen"
@@ -282,11 +296,11 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, sm: 12 }}>
             <MetricCard
               title="Gesamtumsatz"
               value={formatCurrency(data.revenue.total.totalRevenueCents)}
-              helper="Tischkellner und Theke"
+              helper="MVZ, Tischkellner und Theke"
               icon={<EuroRoundedIcon />}
               emphasized
             />
@@ -392,11 +406,11 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
 
           <Grid size={{ xs: 12, sm: 4 }}>
             <MetricCard
-              title="Bewerteter Thekenabgang"
+              title="Geschätzter Thekenumsatz"
               value={formatCurrency(
-                data.analysis.summary.openBarStockValueCents,
+                data.analysis.summary.openBarEstimatedRevenueCents,
               )}
-              helper="Basierend auf Artikelpreisen"
+              helper="Direkte Preise und Rezept-Hochrechnungen"
               icon={<PointOfSaleRoundedIcon />}
             />
           </Grid>
@@ -413,9 +427,11 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
         </Grid>
 
         <Alert severity="info" sx={{ mt: 2 }}>
-          Der bewertete Thekenabgang basiert auf den hinterlegten
-          Artikelpreisen. Er ist kein sicher ermittelter Verkaufsumsatz, weil
-          die offenen Thekenverkäufe nicht einzeln boniert wurden.
+          Der geschätzte Thekenumsatz basiert auf den hinterlegten
+          Artikelpreisen. Artikel ohne eigenen Verkaufspreis werden anhand ihrer
+          verkaufbaren Rezeptartikel hochgerechnet. Da die offenen
+          Thekenverkäufe nicht einzeln boniert wurden, handelt es sich um eine
+          Näherung.
         </Alert>
       </Section>
 
@@ -667,7 +683,7 @@ function AnalysisItemCard({
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Bewerteter Warenabgang offene Theke
+            Geschätzter Umsatz offene Theke
           </Typography>
 
           <Typography
@@ -675,12 +691,168 @@ function AnalysisItemCard({
             color="primary"
             sx={{ fontWeight: 700 }}
           >
-            {formatCurrency(row.openBarStockValueCents)}
+            {formatCurrency(row.openBarEstimatedRevenueCents)}
           </Typography>
         </Box>
+
+        <OpenBarValuationCalculation row={row} />
       </CardContent>
     </Card>
   );
+}
+
+function OpenBarValuationCalculation({
+  row,
+}: {
+  row: ApiGetEventAnalysisResponse['analysis']['rows'][number];
+}) {
+  const valuation = row.openBarValuation;
+
+  if (row.openBarEquivalentUnits <= 0) {
+    return null;
+  }
+
+  if (valuation.method === 'NONE') {
+    return (
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        Für diesen Artikel konnte kein Verkaufspreis und kein geeignetes Rezept
+        zur Umsatzschätzung gefunden werden.
+      </Alert>
+    );
+  }
+
+  if (
+    valuation.method === 'DIRECT_ITEM_PRICE' &&
+    valuation.directUnitPriceCents !== null
+  ) {
+    return (
+      <Box
+        sx={{
+          mt: 2,
+          p: 1.5,
+          borderRadius: 2,
+          bgcolor: 'action.hover',
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mb: 0.5, fontWeight: 700 }}
+        >
+          Berechnung
+        </Typography>
+
+        <Typography variant="body2">
+          {formatNumber(row.openBarEquivalentUnits)} Gebinde ×{' '}
+          {formatCurrency(valuation.directUnitPriceCents)} ={' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {formatCurrency(valuation.estimatedRevenueCents)}
+          </Box>
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        mt: 2,
+        p: 1.5,
+        borderRadius: 2,
+        bgcolor: 'action.hover',
+      }}
+    >
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', fontWeight: 700 }}
+      >
+        Hochrechnung anhand von Rezeptartikeln
+      </Typography>
+
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 0.5, lineHeight: 1.5 }}
+      >
+        Dieser Artikel besitzt keinen eigenen Verkaufspreis. Deshalb werden
+        mögliche Verkaufsszenarien berechnet und anschließend gemittelt.
+      </Typography>
+
+      <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+        {valuation.recipeScenarios.map((scenario) => (
+          <Box
+            key={scenario.recipeItem.id}
+            sx={{
+              p: 1.25,
+              borderRadius: 1.5,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {scenario.recipeItem.brand.name} {scenario.recipeItem.name}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                mt: 0.5,
+                lineHeight: 1.55,
+              }}
+            >
+              {formatRecipeAmount(
+                scenario.consumedIngredientAmount,
+                scenario.recipeUnit,
+              )}{' '}
+              ÷{' '}
+              {formatRecipeAmount(
+                scenario.recipeIngredientAmount,
+                scenario.recipeUnit,
+              )}{' '}
+              = {formatNumber(scenario.theoreticalSalesCount)} Verkäufe
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                lineHeight: 1.55,
+              }}
+            >
+              {formatNumber(scenario.theoreticalSalesCount)} ×{' '}
+              {formatCurrency(scenario.recipeItem.priceCents)} ={' '}
+              <Box component="span" sx={{ fontWeight: 700 }}>
+                {formatCurrency(scenario.estimatedRevenueCents)}
+              </Box>
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
+
+      <Divider sx={{ my: 1.5 }} />
+
+      <Typography variant="body2">
+        Mittelwert aus {valuation.recipeScenarios.length}{' '}
+        {valuation.recipeScenarios.length === 1 ? 'Szenario' : 'Szenarien'}:{' '}
+        <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>
+          {formatCurrency(valuation.estimatedRevenueCents)}
+        </Box>
+      </Typography>
+    </Box>
+  );
+}
+
+function formatRecipeAmount(value: number, unit: 'UNIT' | 'MILLILITER') {
+  if (unit === 'MILLILITER') {
+    return `${formatNumber(value)} ml`;
+  }
+
+  return `${formatNumber(value)} Gebinde`;
 }
 
 function StockValue({
@@ -809,7 +981,7 @@ function formatWaiterUsage(units: number, milliliters: number) {
   const values: string[] = [];
 
   if (units !== 0) {
-    values.push(`${formatNumber(units)} Fl.`);
+    values.push(`${formatNumber(units)} Geb.`);
   }
 
   if (milliliters !== 0) {
@@ -820,7 +992,7 @@ function formatWaiterUsage(units: number, milliliters: number) {
 }
 
 function formatEquivalentUnits(value: number) {
-  return `${formatNumber(value)} Fl.`;
+  return `${formatNumber(value)} Geb.`;
 }
 
 function formatNumber(value: number) {
