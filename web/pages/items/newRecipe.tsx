@@ -28,6 +28,7 @@ import {
 } from '@/lib/models/itemRecipe';
 import { CATEGORIES, translateCategory } from '@/lib/models/item';
 import AutocompleteInput from '@/components/utils/autocompleteInput';
+import OpenBarInferenceFields from '@/components/items/openBarInferenceFields';
 
 type Brand = {
   id: string;
@@ -59,6 +60,14 @@ export default function NewRecipePage() {
   const [inventoryEnabled, setInventoryEnabled] = useState(false);
 
   const [waiterEnabled, setWaiterEnabled] = useState(true);
+
+  const [deriveFromOpenBarStock, setDeriveFromOpenBarStock] = useState(false);
+
+  const [openBarInferenceIngredientId, setOpenBarInferenceIngredientId] =
+    useState('');
+
+  const [openBarInferencePriority, setOpenBarInferencePriority] =
+    useState('100');
 
   const [components, setComponents] = useState<RecipeComponentInput[]>([]);
 
@@ -110,6 +119,25 @@ export default function NewRecipePage() {
       return;
     }
 
+    const inferencePriority = Number(openBarInferencePriority);
+
+    if (deriveFromOpenBarStock && !openBarInferenceIngredientId) {
+      setError(
+        'Bitte wähle einen Leitartikel für die Ableitung aus dem Warenverbrauch aus.',
+      );
+
+      return;
+    }
+
+    if (
+      deriveFromOpenBarStock &&
+      (!Number.isInteger(inferencePriority) || inferencePriority < 0)
+    ) {
+      setError('Bitte gib eine gültige Priorität ein.');
+
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -125,6 +153,13 @@ export default function NewRecipePage() {
         priceCents,
         inventoryEnabled,
         waiterEnabled,
+        deriveFromOpenBarStock,
+        openBarInferencePriority: deriveFromOpenBarStock
+          ? inferencePriority
+          : 0,
+        openBarInferenceIngredientId: deriveFromOpenBarStock
+          ? openBarInferenceIngredientId
+          : null,
         recipeComponents: components,
       });
 
@@ -270,6 +305,15 @@ export default function NewRecipePage() {
                 label="Für Tischkellner verfügbar"
               />
             </div>
+            <OpenBarInferenceFields
+              enabled={deriveFromOpenBarStock}
+              onEnabledChange={setDeriveFromOpenBarStock}
+              ingredientItemId={openBarInferenceIngredientId}
+              onIngredientItemIdChange={setOpenBarInferenceIngredientId}
+              priority={openBarInferencePriority}
+              onPriorityChange={setOpenBarInferencePriority}
+              options={options}
+            />
           </Stack>
         </Paper>
 

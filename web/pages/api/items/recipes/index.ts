@@ -8,6 +8,7 @@ import {
 } from '@/lib/models/saveItemRecipe';
 import { getServerSession } from '@/lib/models/session';
 import { findOrCreateBrandByName } from '@/lib/models/brand';
+import { RecipeComponentInput } from '@/lib/models/itemRecipe';
 
 class ApiError extends Error {
   constructor(
@@ -28,6 +29,21 @@ function parseInteger(value: unknown, field: string) {
 
   return parsed;
 }
+
+type CreateRecipePayload = {
+  name: string;
+  brandName: string;
+  category: ItemCategory;
+  priceCents: number;
+  inventoryEnabled: boolean;
+  waiterEnabled: boolean;
+
+  deriveFromOpenBarStock?: boolean;
+  openBarInferencePriority?: number;
+  openBarInferenceIngredientId?: string | null;
+
+  recipeComponents: RecipeComponentInput[];
+};
 
 export default async function handler(
   req: NextApiRequest,
@@ -50,21 +66,17 @@ export default async function handler(
       });
     }
 
-    const name = String(req.body?.name ?? '').trim();
-    const brandName = String(req.body?.brandName ?? '').trim();
-    const category = req.body?.category as ItemCategory;
-
-    const priceCents = parseInteger(req.body?.priceCents, 'priceCents');
-
-    const inventoryEnabled =
-      typeof req.body?.inventoryEnabled === 'boolean'
-        ? req.body.inventoryEnabled
-        : false;
-
-    const waiterEnabled =
-      typeof req.body?.waiterEnabled === 'boolean'
-        ? req.body.waiterEnabled
-        : true;
+    const {
+      name,
+      brandName,
+      category,
+      priceCents,
+      inventoryEnabled,
+      waiterEnabled,
+      deriveFromOpenBarStock = false,
+      openBarInferencePriority = 0,
+      openBarInferenceIngredientId = null,
+    } = req.body as CreateRecipePayload;
 
     const recipeComponents = parseRecipeComponents(req.body?.recipeComponents);
 
@@ -88,6 +100,22 @@ export default async function handler(
       throw new ApiError(400, 'Ein Rezept benötigt mindestens eine Zutat.');
     }
 
+    if (deriveFromOpenBarStock && !openBarInferenceIngredientId) {
+      return res.status(400).json({
+        error:
+          'Für die Ableitung aus dem Warenverbrauch muss ein Leitartikel ausgewählt werden.',
+      });
+    }
+
+    if (
+      !Number.isInteger(openBarInferencePriority) ||
+      openBarInferencePriority < 0
+    ) {
+      return res.status(400).json({
+        error: 'Die Priorität ist ungültig.',
+      });
+    }
+
     const brand = await findOrCreateBrandByName(brandName);
 
     const item = await prisma.$transaction(async (tx) => {
@@ -105,6 +133,16 @@ export default async function handler(
 
           inventoryEnabled,
           waiterEnabled,
+
+          deriveFromOpenBarStock,
+
+          openBarInferencePriority: deriveFromOpenBarStock
+            ? openBarInferencePriority
+            : 0,
+
+          openBarInferenceIngredientId: deriveFromOpenBarStock
+            ? openBarInferenceIngredientId
+            : null,
         },
       });
 

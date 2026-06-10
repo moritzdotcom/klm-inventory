@@ -12,6 +12,7 @@ import {
   RecipeItemOption,
 } from '@/lib/models/itemRecipe';
 import type { ApiGetItemRecipeResponse } from '@/pages/api/items/[itemId]/recipe';
+import OpenBarInferenceFields from '@/components/items/openBarInferenceFields';
 
 export default function EditRecipePage({ itemId }: { itemId: string }) {
   const router = useRouter();
@@ -21,6 +22,14 @@ export default function EditRecipePage({ itemId }: { itemId: string }) {
   const [options, setOptions] = useState<RecipeItemOption[]>([]);
 
   const [components, setComponents] = useState<RecipeComponentInput[]>([]);
+
+  const [deriveFromOpenBarStock, setDeriveFromOpenBarStock] = useState(false);
+
+  const [openBarInferenceIngredientId, setOpenBarInferenceIngredientId] =
+    useState('');
+
+  const [openBarInferencePriority, setOpenBarInferencePriority] =
+    useState('100');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,6 +43,15 @@ export default function EditRecipePage({ itemId }: { itemId: string }) {
       .then(([recipeResponse, optionsResponse]) => {
         setRecipe(recipeResponse.data);
         setOptions(optionsResponse.data);
+        setDeriveFromOpenBarStock(
+          recipeResponse.data.item.deriveFromOpenBarStock,
+        );
+        setOpenBarInferenceIngredientId(
+          recipeResponse.data.item.openBarInferenceIngredientId || '',
+        );
+        setOpenBarInferencePriority(
+          String(recipeResponse.data.item.openBarInferencePriority || 100),
+        );
 
         setComponents(
           recipeResponse.data.components.map((component) => ({
@@ -53,12 +71,38 @@ export default function EditRecipePage({ itemId }: { itemId: string }) {
       return;
     }
 
+    const inferencePriority = Number(openBarInferencePriority);
+
+    if (deriveFromOpenBarStock && !openBarInferenceIngredientId) {
+      setError(
+        'Bitte wähle einen Leitartikel für die Ableitung aus dem Warenverbrauch aus.',
+      );
+
+      return;
+    }
+
+    if (
+      deriveFromOpenBarStock &&
+      (!Number.isInteger(inferencePriority) || inferencePriority < 0)
+    ) {
+      setError('Bitte gib eine gültige Priorität ein.');
+
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       await axios.put(`/api/items/${itemId}/recipe`, {
         recipeComponents: components,
+        deriveFromOpenBarStock,
+        openBarInferencePriority: deriveFromOpenBarStock
+          ? inferencePriority
+          : 0,
+        openBarInferenceIngredientId: deriveFromOpenBarStock
+          ? openBarInferenceIngredientId
+          : null,
       });
 
       await router.push(`/items/${itemId}`);
@@ -127,6 +171,33 @@ export default function EditRecipePage({ itemId }: { itemId: string }) {
             </Typography>
           </Paper>
         )}
+
+        <Paper
+          sx={{
+            mb: 3,
+            p: 2,
+            borderRadius: 3,
+          }}
+        >
+          <Typography variant="h6" fontWeight={700}>
+            Ableitung für offene Theke
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Optional kannst du festlegen, ob dieses Produkt aus fehlenden
+            Lagerartikeln rekonstruiert werden soll.
+          </Typography>
+
+          <OpenBarInferenceFields
+            enabled={deriveFromOpenBarStock}
+            onEnabledChange={setDeriveFromOpenBarStock}
+            ingredientItemId={openBarInferenceIngredientId}
+            onIngredientItemIdChange={setOpenBarInferenceIngredientId}
+            priority={openBarInferencePriority}
+            onPriorityChange={setOpenBarInferencePriority}
+            options={options.filter((option) => option.id !== itemId)}
+          />
+        </Paper>
 
         <Paper
           sx={{

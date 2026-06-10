@@ -435,6 +435,21 @@ export default function EventAnalysisPage({ eventId }: { eventId: string }) {
         </Alert>
       </Section>
 
+      <Section title="Abgeleitete Thekenverkäufe" sx={{ mt: 3 }}>
+        {data.analysis.derivedOpenBarSales.length === 0 ? (
+          <Alert severity="info">
+            Es wurden keine zusammengesetzten Verkäufe aus dem Warenverbrauch
+            abgeleitet.
+          </Alert>
+        ) : (
+          <Stack spacing={1.5}>
+            {data.analysis.derivedOpenBarSales.map((sale) => (
+              <DerivedOpenBarSaleCard key={sale.item.id} sale={sale} />
+            ))}
+          </Stack>
+        )}
+      </Section>
+
       <Section title="Artikelübersicht" sx={{ mt: 3 }}>
         {groupedRows.length === 0 ? (
           <Alert severity="info">
@@ -593,6 +608,119 @@ function Section({
   );
 }
 
+function DerivedOpenBarSaleCard({
+  sale,
+}: {
+  sale: ApiGetEventAnalysisResponse['analysis']['derivedOpenBarSales'][number];
+}) {
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        borderRadius: 3,
+        borderColor: 'primary.light',
+        bgcolor: 'primary.50',
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Abgeleiteter Verkauf
+            </Typography>
+
+            <Typography
+              variant="subtitle1"
+              color="primary"
+              sx={{ fontWeight: 700 }}
+            >
+              {sale.item.brand.name} {sale.item.name}
+            </Typography>
+          </Box>
+
+          <Typography
+            variant="subtitle1"
+            color="primary"
+            sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+          >
+            {formatCurrency(sale.revenueCents)}
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 1.5 }} />
+
+        <Typography variant="body2">
+          {formatNumber(sale.inferenceIngredient.availableAmount)}{' '}
+          {formatRecipeUnit(sale.inferenceIngredient.unit)} ÷{' '}
+          {formatNumber(sale.inferenceIngredient.requiredAmountPerSale)}{' '}
+          {formatRecipeUnit(sale.inferenceIngredient.unit)} je Verkauf ={' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {formatNumber(sale.quantity)} × {sale.item.name}
+          </Box>
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          {formatNumber(sale.quantity)} × {formatCurrency(sale.item.priceCents)}{' '}
+          ={' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {formatCurrency(sale.revenueCents)}
+          </Box>
+        </Typography>
+
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            display: 'block',
+            mt: 1.5,
+            mb: 0.5,
+            fontWeight: 700,
+          }}
+        >
+          Abgezogene Zutaten
+        </Typography>
+
+        <Stack spacing={0.25}>
+          {sale.consumedIngredients.map((ingredient) => (
+            <Typography
+              key={ingredient.itemId}
+              variant="caption"
+              color="text.secondary"
+            >
+              - {formatConsumedIngredientAmount(ingredient)} {ingredient.name}
+            </Typography>
+          ))}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatRecipeUnit(unit: 'UNIT' | 'MILLILITER') {
+  return unit === 'MILLILITER' ? 'ml' : 'Gebinde';
+}
+
+function formatConsumedIngredientAmount(ingredient: {
+  amount: number;
+  unit: 'UNIT' | 'MILLILITER';
+  sizeInMl: number | null;
+}) {
+  if (ingredient.unit === 'MILLILITER' && ingredient.sizeInMl) {
+    return `${formatNumber(ingredient.amount / ingredient.sizeInMl)} Fl.`;
+  }
+
+  return `${formatNumber(ingredient.amount)} ${
+    ingredient.unit === 'MILLILITER' ? 'ml' : 'Geb.'
+  }`;
+}
+
 function AnalysisItemCard({
   row,
 }: {
@@ -670,6 +798,53 @@ function AnalysisItemCard({
             />
           </Grid>
         </Grid>
+
+        {row.derivedProductAllocations.length > 0 && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                mb: 0.75,
+                fontWeight: 700,
+              }}
+            >
+              Abzug für abgeleitete Verkäufe
+            </Typography>
+
+            <Stack spacing={0.5}>
+              {row.derivedProductAllocations.map((allocation) => (
+                <Typography
+                  key={allocation.derivedSaleItem.id}
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  - {formatNumber(allocation.amount)}{' '}
+                  {formatRecipeUnit(allocation.unit)} für{' '}
+                  {formatNumber(allocation.derivedSaleQuantity)} ×{' '}
+                  {allocation.derivedSaleItem.name}
+                </Typography>
+              ))}
+            </Stack>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Typography variant="body2">
+              Verbleibender Einzelverbrauch:{' '}
+              <Box component="span" sx={{ fontWeight: 700 }}>
+                {formatEquivalentUnits(row.openBarEquivalentUnits)}
+              </Box>
+            </Typography>
+          </Box>
+        )}
 
         <Divider sx={{ my: 2 }} />
 

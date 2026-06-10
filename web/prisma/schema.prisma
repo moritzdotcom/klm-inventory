@@ -62,11 +62,6 @@ model Item {
   brand    Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
   name     String
 
-  /**
-   * Für physische Gebinde: Flaschen- oder Bag-Größe.
-   * Für abstrakte Verkaufsprodukte wie "Aperol Boot" oder
-   * "10 × Estrella Bucket" kann das Feld leer bleiben.
-   */
   sizeInMl Int?
 
   image          String @default("")
@@ -78,19 +73,39 @@ model Item {
   waiterEnabled    Boolean @default(true)
 
   /**
-   * Freie, eventunabhängige Lagerinventuren.
+   * Darf dieser Verkaufsartikel aus dem offenen Thekenverbrauch
+   * rekonstruiert werden?
+   * Beispiele:
+   * - Aperol Boot
+   * - Aperol Baum
+   * Normale Lagerartikel benötigen das nicht.
    */
+  deriveFromOpenBarStock Boolean @default(false)
+
+  /**
+   * Höhere Werte werden zuerst aufgelöst.
+   * Beispiel:
+   * Aperol Baum   = 100
+   * Aperol Spritz = 50
+   */
+  openBarInferencePriority Int @default(0)
+
+  /**
+   * Physischer Lagerartikel, aus dessen Verbrauch die Anzahl
+   * des Verkaufsproduktes abgeleitet wird.
+   * Beispiel:
+   * Aperol Boot -> Aperol 0,7 l
+   * Aperol Baum -> Aperol 1,0 l
+   */
+  openBarInferenceIngredientId String?
+  openBarInferenceIngredient   Item?   @relation("OpenBarInferenceIngredient", fields: [openBarInferenceIngredientId], references: [id], onDelete: SetNull)
+
+  inferredOpenBarProducts Item[] @relation("OpenBarInferenceIngredient")
+
   countings Counting[]
 
-  /**
-   * Eventbezogene Kühlwagen-Zählungen:
-   * Anfangs- und Endbestand.
-   */
   eventInventoryCountings EventInventoryCounting[]
 
-  /**
-   * Mitarbeitergetränke.
-   */
   employeeDrinkIssues EventEmployeeDrinkIssue[]
   employeeDrinkLogs   EventEmployeeDrinkLog[]
 
@@ -101,6 +116,8 @@ model Item {
   usedInRecipes    ItemRecipeComponent[] @relation("RecipeIngredient")
 
   waiterIssueRecipeComponents EventWaiterIssueRecipeComponent[]
+
+  @@index([openBarInferenceIngredientId])
 }
 
 enum ItemCategory {

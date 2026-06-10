@@ -24,6 +24,9 @@ async function getRecipe(itemId: string) {
     select: {
       id: true,
       name: true,
+      deriveFromOpenBarStock: true,
+      openBarInferencePriority: true,
+      openBarInferenceIngredientId: true,
       brand: {
         select: {
           name: true,
@@ -70,6 +73,9 @@ async function getRecipe(itemId: string) {
     item: {
       id: item.id,
       name: item.name,
+      deriveFromOpenBarStock: item.deriveFromOpenBarStock,
+      openBarInferencePriority: item.openBarInferencePriority,
+      openBarInferenceIngredientId: item.openBarInferenceIngredientId,
       brand: item.brand,
     },
     components: item.recipeComponents.map((component) => ({
@@ -118,9 +124,31 @@ export default async function handler(
       }
 
       case 'PUT': {
+        const {
+          deriveFromOpenBarStock = false,
+          openBarInferencePriority = 0,
+          openBarInferenceIngredientId = null,
+        } = req.body;
+
         const recipeComponents = parseRecipeComponents(
           req.body?.recipeComponents,
         );
+
+        if (deriveFromOpenBarStock && !openBarInferenceIngredientId) {
+          return res.status(400).json({
+            error:
+              'Für die Ableitung aus dem Warenverbrauch muss ein Leitartikel ausgewählt werden.',
+          });
+        }
+
+        if (
+          !Number.isInteger(openBarInferencePriority) ||
+          openBarInferencePriority < 0
+        ) {
+          return res.status(400).json({
+            error: 'Die Priorität ist ungültig.',
+          });
+        }
 
         await prisma.$transaction(async (tx) => {
           const exists = await tx.item.findUnique({
@@ -135,6 +163,22 @@ export default async function handler(
           if (!exists) {
             throw new ApiError(404, 'Artikel nicht gefunden.');
           }
+
+          await tx.item.update({
+            where: {
+              id: itemId,
+            },
+
+            data: {
+              deriveFromOpenBarStock,
+              openBarInferencePriority: deriveFromOpenBarStock
+                ? openBarInferencePriority
+                : 0,
+              openBarInferenceIngredientId: deriveFromOpenBarStock
+                ? openBarInferenceIngredientId
+                : null,
+            },
+          });
 
           await replaceItemRecipe(tx, itemId, recipeComponents);
         });

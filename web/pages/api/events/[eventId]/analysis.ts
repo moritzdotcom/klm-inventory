@@ -179,16 +179,19 @@ async function handleGET(
       }),
 
       prisma.item.findMany({
-        where: {
-          inventoryEnabled: true,
-        },
         select: {
           id: true,
           name: true,
           category: true,
           sizeInMl: true,
           priceCents: true,
+
           inventoryEnabled: true,
+          waiterEnabled: true,
+
+          deriveFromOpenBarStock: true,
+          openBarInferencePriority: true,
+          openBarInferenceIngredientId: true,
 
           brand: {
             select: {
@@ -197,12 +200,14 @@ async function handleGET(
             },
           },
 
-          /**
-           * Alle Verkaufsartikel, die diesen Lagerartikel verwenden.
-           *
-           * Beispiel:
-           * Espresso Martini Bag -> Espresso Martini, Espresso Martini Shot
-           */
+          recipeComponents: {
+            select: {
+              ingredientItemId: true,
+              amount: true,
+              unit: true,
+            },
+          },
+
           usedInRecipes: {
             select: {
               amount: true,

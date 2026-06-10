@@ -107,12 +107,27 @@ async function handleGET(
       },
     }),
 
-    prisma.item.findMany({
+    prisma.event.findUnique({
       where: {
-        inventoryEnabled: true,
+        id: eventId,
       },
-      include: {
-        brand: true,
+      select: {
+        inventory: {
+          select: {
+            countings: {
+              where: {
+                phase: 'OPENING',
+              },
+              select: {
+                item: {
+                  include: {
+                    brand: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     }),
   ]);
@@ -128,7 +143,7 @@ async function handleGET(
     openingCompletedAt:
       event.inventory?.openingCompletedAt?.toISOString() || null,
     completedAt: event.inventory?.closingCompletedAt?.toISOString() || null,
-    items,
+    items: items?.inventory?.countings.map((c) => c.item) || [],
     countings: event.inventory?.countings || [],
   });
 }

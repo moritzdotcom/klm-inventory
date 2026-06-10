@@ -1,6 +1,13 @@
 // lib/events/buildEventAnalysis.ts
 
 import { ItemCategory, RecipeUnit } from '@prisma/client';
+import {
+  DerivedIngredientAllocation,
+  DerivedOpenBarSale,
+  normalizeAmount,
+  RecipeGraphItem,
+  resolveDerivedOpenBarSales,
+} from './resolveDerivedOpenBarSales';
 
 export type EventAnalysisItem = {
   id: string;
@@ -9,6 +16,7 @@ export type EventAnalysisItem = {
   sizeInMl: number | null;
   priceCents: number;
   inventoryEnabled: boolean;
+
   brand: {
     id: string;
     name: string;
@@ -33,6 +41,15 @@ type AnalysisInputItem = EventAnalysisItem & {
    * Beispiel:
    * Espresso Martini Bag -> Espresso Martini, Espresso Martini Shot
    */
+  deriveFromOpenBarStock: boolean;
+  openBarInferencePriority: number;
+  openBarInferenceIngredientId: string | null;
+  recipeComponents: Array<{
+    ingredientItemId: string;
+    amount: number;
+    unit: RecipeUnit;
+  }>;
+
   usedInRecipes: Array<{
     amount: number;
     unit: RecipeUnit;
@@ -146,20 +163,24 @@ export type EventAnalysisRow = {
   waiterMilliliters: number;
 
   /**
-   * Wird gesetzt, wenn der Artikel eine definierte Gebindegröße besitzt.
+   * Rohverbrauch vor dem Abzug abgeleiteter Produkte.
+   */
+  rawOpenBarMilliliters: number | null;
+  rawOpenBarEquivalentUnits: number;
+
+  /**
+   * Verbleibender Einzelverbrauch nach dem Abzug von
+   * Aperol Boot, Aperol Baum etc.
    */
   openBarMilliliters: number | null;
   openBarEquivalentUnits: number;
 
   /**
-   * Geschätzter Umsatz anhand des eigenen Preises oder verwendender Rezepte.
+   * Für die verständliche Anzeige im Frontend.
    */
-  openBarEstimatedRevenueCents: number;
+  derivedProductAllocations: DerivedIngredientAllocation[];
 
-  /**
-   * Alias für bestehenden Frontend-Code.
-   * Kann später entfernt werden.
-   */
+  openBarEstimatedRevenueCents: number;
   openBarStockValueCents: number;
 
   openBarValuation: EventAnalysisOpenBarValuation;
@@ -169,15 +190,21 @@ export type EventAnalysisRow = {
 
 export type EventAnalysisResult = {
   rows: EventAnalysisRow[];
+
+  /**
+   * Beispielsweise:
+   * - 3 × Aperol Boot
+   * - 16 × Aperol Baum
+   */
+  derivedOpenBarSales: DerivedOpenBarSale[];
+
   warnings: EventAnalysisWarning[];
 
   summary: {
+    derivedOpenBarRevenueCents: number;
+    directOpenBarRevenueCents: number;
     openBarEstimatedRevenueCents: number;
 
-    /**
-     * Alias für bestehenden Frontend-Code.
-     * Kann später entfernt werden.
-     */
     openBarStockValueCents: number;
 
     negativeRowCount: number;
@@ -278,7 +305,9 @@ export function buildEventAnalysis(input: {
     }
   }
 
-  const rows = items.map<EventAnalysisRow>((item) => {
+  const inventoryItems = items.filter((item) => item.inventoryEnabled);
+
+  const rawRows = inventoryItems.map((item) => {
     const openingUnits = openingMap.get(item.id) || 0;
     const closingUnits = closingMap.get(item.id) || 0;
     const employeeDrinkUnits = employeeDrinkMap.get(item.id) || 0;
@@ -288,29 +317,81 @@ export function buildEventAnalysis(input: {
       milliliters: 0,
     };
 
-    if (!item.sizeInMl && waiterUsage.milliliters > 0) {
-      warnings.push({
-        code: 'MILLILITER_USAGE_WITHOUT_ITEM_SIZE',
-        itemId: item.id,
-        message: `Für "${item.brand.name} ${item.name}" wurde ein Verbrauch in Millilitern erfasst, aber keine Gebindegröße hinterlegt.`,
-      });
-    }
-
-    let openBarMilliliters: number | null = null;
-    let openBarEquivalentUnits: number;
+    let rawOpenBarMilliliters: number | null = null;
+    let rawOpenBarEquivalentUnits: number;
 
     if (item.sizeInMl) {
-      openBarMilliliters =
+      rawOpenBarMilliliters =
         openingUnits * item.sizeInMl -
         closingUnits * item.sizeInMl -
         employeeDrinkUnits * item.sizeInMl -
         waiterUsage.units * item.sizeInMl -
         waiterUsage.milliliters;
 
-      openBarEquivalentUnits = openBarMilliliters / item.sizeInMl;
+      rawOpenBarEquivalentUnits = rawOpenBarMilliliters / item.sizeInMl;
     } else {
-      openBarEquivalentUnits =
+      rawOpenBarEquivalentUnits =
         openingUnits - closingUnits - employeeDrinkUnits - waiterUsage.units;
+    }
+
+    return {
+      item,
+      openingUnits,
+      closingUnits,
+      employeeDrinkUnits,
+      waiterUsage,
+      rawOpenBarMilliliters,
+      rawOpenBarEquivalentUnits,
+    };
+  });
+
+  const rawConsumption = new Map(
+    rawRows.map((row) => {
+      return [
+        row.item.id,
+        normalizeAmount({
+          itemId: row.item.id,
+          sizeInMl: row.item.sizeInMl,
+          amount: row.rawOpenBarEquivalentUnits,
+          unit: 'UNIT',
+        }),
+      ];
+    }),
+  );
+
+  const {
+    derivedSales,
+    remainingConsumption,
+    allocationsByIngredientId,
+    warnings: derivedSalesWarnings,
+  } = resolveDerivedOpenBarSales({
+    items: items as RecipeGraphItem[],
+    rawConsumption,
+  });
+
+  for (const message of derivedSalesWarnings) {
+    warnings.push({
+      code: 'MISSING_OPEN_BAR_VALUATION',
+      itemId: '',
+      message,
+    });
+  }
+
+  const rows = rawRows.map<EventAnalysisRow>((rawRow) => {
+    const { item } = rawRow;
+
+    const remaining = remainingConsumption.get(item.id);
+
+    let openBarMilliliters: number | null = null;
+    let openBarEquivalentUnits = 0;
+
+    if (remaining) {
+      if (remaining.unit === 'MILLILITER' && item.sizeInMl) {
+        openBarMilliliters = remaining.amount;
+        openBarEquivalentUnits = remaining.amount / item.sizeInMl;
+      } else {
+        openBarEquivalentUnits = remaining.amount;
+      }
     }
 
     const hasNegativeOpenBarConsumption = openBarEquivalentUnits < 0;
@@ -319,7 +400,7 @@ export function buildEventAnalysis(input: {
       warnings.push({
         code: 'NEGATIVE_OPEN_BAR_CONSUMPTION',
         itemId: item.id,
-        message: `Für "${item.brand.name} ${item.name}" wurde ein negativer offener Thekenverbrauch berechnet. Prüfe Anfangsbestand, Endbestand und Ausgaben.`,
+        message: `Für "${item.brand.name} ${item.name}" wurde nach der Rezeptauflösung ein negativer offener Thekenverbrauch berechnet. Prüfe die Bestände oder die Rezeptkonfiguration.`,
       });
     }
 
@@ -329,32 +410,26 @@ export function buildEventAnalysis(input: {
       openBarMilliliters,
     });
 
-    if (openBarEquivalentUnits > 0 && openBarValuation.method === 'NONE') {
-      warnings.push({
-        code: 'MISSING_OPEN_BAR_VALUATION',
-        itemId: item.id,
-        message: `Für "${item.brand.name} ${item.name}" wurde ein offener Thekenverbrauch berechnet, aber es konnte kein Verkaufspreis und kein bewertbares Rezept gefunden werden.`,
-      });
-    }
-
     return {
       item: toPublicItem(item),
 
-      openingUnits,
-      employeeDrinkUnits,
-      closingUnits,
+      openingUnits: rawRow.openingUnits,
+      employeeDrinkUnits: rawRow.employeeDrinkUnits,
+      closingUnits: rawRow.closingUnits,
 
-      waiterUnits: waiterUsage.units,
-      waiterMilliliters: waiterUsage.milliliters,
+      waiterUnits: rawRow.waiterUsage.units,
+      waiterMilliliters: rawRow.waiterUsage.milliliters,
+
+      rawOpenBarMilliliters: rawRow.rawOpenBarMilliliters,
+      rawOpenBarEquivalentUnits: rawRow.rawOpenBarEquivalentUnits,
 
       openBarMilliliters,
       openBarEquivalentUnits,
 
+      derivedProductAllocations: allocationsByIngredientId.get(item.id) || [],
+
       openBarEstimatedRevenueCents: openBarValuation.estimatedRevenueCents,
 
-      /**
-       * Bestehendes Feld zunächst erhalten.
-       */
       openBarStockValueCents: openBarValuation.estimatedRevenueCents,
 
       openBarValuation,
@@ -363,20 +438,33 @@ export function buildEventAnalysis(input: {
     };
   });
 
-  const openBarEstimatedRevenueCents = rows.reduce(
-    (sum, row) => sum + row.openBarEstimatedRevenueCents,
+  const derivedOpenBarRevenueCents = derivedSales.reduce(
+    (sum, sale) => sum + sale.revenueCents,
     0,
   );
 
+  const directOpenBarRevenueCents = rows.reduce(
+    (sum, row) => sum + Math.max(row.openBarEstimatedRevenueCents, 0),
+    0,
+  );
+
+  const openBarEstimatedRevenueCents =
+    derivedOpenBarRevenueCents + directOpenBarRevenueCents;
+
   return {
     rows,
+
+    derivedOpenBarSales: derivedSales,
+
     warnings,
 
     summary: {
+      derivedOpenBarRevenueCents,
+      directOpenBarRevenueCents,
       openBarEstimatedRevenueCents,
 
       /**
-       * Bestehendes Feld zunächst erhalten.
+       * Alter Alias, damit dein bestehender Code zunächst weiterläuft.
        */
       openBarStockValueCents: openBarEstimatedRevenueCents,
 
@@ -390,7 +478,7 @@ export function buildEventAnalysis(input: {
           row.employeeDrinkUnits !== 0 ||
           row.waiterUnits !== 0 ||
           row.waiterMilliliters !== 0 ||
-          row.openBarEquivalentUnits !== 0,
+          row.rawOpenBarEquivalentUnits !== 0,
       ).length,
     },
   };
